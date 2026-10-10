@@ -60,4 +60,18 @@ The system is built entirely around Object-Oriented design principles — encaps
 | Version Control | Git + GitHub |
 
 ---
-
+## Project Structure
+```bash
+smart-parking-management-system/
+├── README.md
+├── source_code/
+│   ├── backend/
+│   ├── frontend/
+├── docs/
+├── UML_diagrams/
+│   ├── Smart Parking - Activity Diagram.drawio
+│   ├── Smart Parking - Class Diagram.drawio
+│   ├── Smart Parking - Sequence Diagram.drawio
+│   ├── Smart Parking - Usecase Diagram.drawio
+└── .gitignore
+```

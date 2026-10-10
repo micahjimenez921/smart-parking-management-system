@@ -75,3 +75,12 @@ smart-parking-management-system/
 │   ├── Smart Parking - Usecase Diagram.drawio
 └── .gitignore
 ```
+## Setup/Execution Instructions
+
+## UML Diagrams
+```
+Activity Diagram - https://drive.google.com/file/d/1qCvfWEacayVQOiDpiswt9HcmbSzh8mZ2/view?usp=sharing
+Class Diagram - https://drive.google.com/file/d/1xnFcemooXX9RI9cOM4pxUOtNwubIkxb4/view?usp=drive_link
+Sequence Diagram - https://drive.google.com/file/d/1nI1CPg_d7qLd5hFDEZWrF4E8xKmXwD2z/view?usp=drive_link
+Usecase Diagram - https://drive.google.com/file/d/1fJ5VBUVPP-s7xM8wY9TlLhuA2bSJ6bVm/view?usp=drive_link
+```

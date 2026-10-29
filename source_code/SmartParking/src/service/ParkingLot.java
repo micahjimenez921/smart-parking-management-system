@@ -89,7 +89,7 @@ public class ParkingLot {
         return ticket;
     }
 
-    public Receipt checkout(String ticketId, PaymentMethod method)
+        public Receipt checkout(String ticketId, PaymentMethod method)
             throws InvalidTicketException, PaymentFailedException {
         Ticket ticket = findTicket(ticketId);
         double fee = ticket.calculateFee();
@@ -104,5 +104,12 @@ public class ParkingLot {
                 ticket.getSlot().getSlotId(), hours, method.getMethodName(), fee);
         receipts.add(receipt);
         return receipt;
+    }
+
+    public Ticket findTicketBySlot(ParkingSlot slot) {
+        for (Ticket t : activeTickets.values()) {
+            if (t.getSlot() == slot) return t;
+        }
+        return null;
     }
 }

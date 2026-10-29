@@ -1,45 +1,33 @@
 package app;
 
-import exception.InvalidTicketException;
+import com.formdev.flatlaf.FlatLightLaf;
 import exception.ParkingFullException;
-import exception.PaymentFailedException;
 import model.*;
-import payment.*;
 import service.ParkingLot;
+import ui.MainWindow;
+
+import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
         ParkingLot lot = new ParkingLot("Main Lot");
-        lot.addSlot(new RegularSlot("R-01"));
-        lot.addSlot(new HandicappedSlot("H-01"));
-        lot.addSlot(new VIPSlot("V-01"));
+        for (int i = 1; i <= 4; i++) lot.addSlot(new RegularSlot(String.format("R-%02d", i)));
+        for (int i = 1; i <= 2; i++) lot.addSlot(new HandicappedSlot(String.format("H-%02d", i)));
+        for (int i = 1; i <= 2; i++) lot.addSlot(new VIPSlot(String.format("V-%02d", i)));
 
         try {
-            Ticket t = lot.parkVehicle(new Car("ABC123", "Ana"), "REGULAR");
-            System.out.println("Parked: " + t.getVehicle().getPlateNumber()
-                    + " in " + t.getSlot().getSlotId() + " | ticket " + t.getTicketId());
+            lot.parkVehicle(new Car("ABC123", "Ana"), "REGULAR");
+            lot.parkVehicle(new Motorcycle("MOTO456", "Ben"), "REGULAR");
+            lot.parkVehicle(new Truck("TRK789", "Carla"), "VIP");
         } catch (ParkingFullException e) {
-            System.out.println("Error: " + e.getMessage());
+            System.out.println(e.getMessage());
         }
 
-        try {
-            lot.checkout("T-001", new CardPayment("123"));
-        } catch (PaymentFailedException e) {
-            System.out.println("Payment failed: " + e.getMessage());
-        } catch (InvalidTicketException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        FlatLightLaf.setup();
+        UIManager.put("Button.arc", 12);
+        UIManager.put("Component.arc", 12);
+        UIManager.put("TextComponent.arc", 12);
 
-        try {
-            Receipt r = lot.checkout("T-001", new CashPayment(50));
-            System.out.println(r);
-        } catch (PaymentFailedException e) {
-            System.out.println("Payment failed: " + e.getMessage());
-        } catch (InvalidTicketException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-
-        System.out.println("Available slots: " + lot.getAvailableCount());
-        System.out.println("Total revenue: " + lot.getTotalRevenue());
+        SwingUtilities.invokeLater(() -> new MainWindow(lot).setVisible(true));
     }
 }

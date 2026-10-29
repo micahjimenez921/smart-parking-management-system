@@ -1,0 +1,2 @@
+out/
+sources.txtgit rm -r --cached out

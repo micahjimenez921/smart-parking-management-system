@@ -2,10 +2,10 @@ package app;
 
 import exception.InvalidTicketException;
 import exception.ParkingFullException;
+import exception.PaymentFailedException;
 import model.*;
+import payment.*;
 import service.ParkingLot;
-
-import java.time.LocalDateTime;
 
 public class Main {
     public static void main(String[] args) {
@@ -15,26 +15,31 @@ public class Main {
         lot.addSlot(new VIPSlot("V-01"));
 
         try {
-            Ticket t1 = lot.parkVehicle(new Car("ABC123", "Ana"), "REGULAR");
-            System.out.println("Parked: " + t1.getVehicle().getPlateNumber()
-                    + " in " + t1.getSlot().getSlotId() + " | ticket " + t1.getTicketId());
-            lot.parkVehicle(new Truck("TRK789", "Carla"), "REGULAR");
+            Ticket t = lot.parkVehicle(new Car("ABC123", "Ana"), "REGULAR");
+            System.out.println("Parked: " + t.getVehicle().getPlateNumber()
+                    + " in " + t.getSlot().getSlotId() + " | ticket " + t.getTicketId());
         } catch (ParkingFullException e) {
             System.out.println("Error: " + e.getMessage());
         }
 
         try {
-            Ticket done = lot.exitVehicle("T-001");
-            System.out.println("Exited: " + done.getVehicle().getPlateNumber()
-                    + " | hours charged: " + done.getHoursParked()
-                    + " | fee: " + done.calculateFee());
-            lot.exitVehicle("T-999");
+            lot.checkout("T-001", new CardPayment("123"));
+        } catch (PaymentFailedException e) {
+            System.out.println("Payment failed: " + e.getMessage());
         } catch (InvalidTicketException e) {
             System.out.println("Error: " + e.getMessage());
         }
 
-        Ticket old = new Ticket("TEST", new Car("OLD111", "Zed"), new VIPSlot("V-99"),
-                LocalDateTime.now().minusHours(2).minusMinutes(10));
-        System.out.println("Fee for 2h10m in a VIP slot: " + old.calculateFee());
+        try {
+            Receipt r = lot.checkout("T-001", new CashPayment(50));
+            System.out.println(r);
+        } catch (PaymentFailedException e) {
+            System.out.println("Payment failed: " + e.getMessage());
+        } catch (InvalidTicketException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+
+        System.out.println("Available slots: " + lot.getAvailableCount());
+        System.out.println("Total revenue: " + lot.getTotalRevenue());
     }
 }

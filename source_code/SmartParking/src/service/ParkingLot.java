@@ -2,9 +2,12 @@ package service;
 
 import exception.InvalidTicketException;
 import exception.ParkingFullException;
+import exception.PaymentFailedException;
 import model.ParkingSlot;
+import model.Receipt;
 import model.Ticket;
 import model.Vehicle;
+import payment.PaymentMethod;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +18,7 @@ public class ParkingLot {
     private String name;
     private List<ParkingSlot> slots = new ArrayList<>();
     private Map<String, Ticket> activeTickets = new HashMap<>();
+    private List<Receipt> receipts = new ArrayList<>();
     private int ticketCounter = 0;
 
     public ParkingLot(String name) {
@@ -24,6 +28,8 @@ public class ParkingLot {
     public String getName() { return name; }
 
     public List<ParkingSlot> getSlots() { return slots; }
+
+    public List<Receipt> getReceipts() { return receipts; }
 
     public void addSlot(ParkingSlot slot) {
         slots.add(slot);
@@ -35,6 +41,14 @@ public class ParkingLot {
             if (s.isAvailable()) count++;
         }
         return count;
+    }
+
+    public double getTotalRevenue() {
+        double total = 0;
+        for (Receipt r : receipts) {
+            total += r.getAmount();
+        }
+        return total;
     }
 
     public ParkingSlot findAvailableSlot(String slotType) {
@@ -73,5 +87,22 @@ public class ParkingLot {
         ticket.close();
         activeTickets.remove(ticketId);
         return ticket;
+    }
+
+    public Receipt checkout(String ticketId, PaymentMethod method)
+            throws InvalidTicketException, PaymentFailedException {
+        Ticket ticket = findTicket(ticketId);
+        double fee = ticket.calculateFee();
+        long hours = ticket.getHoursParked();
+
+        method.pay(fee);
+
+        ticket.markPaid();
+        exitVehicle(ticketId);
+
+        Receipt receipt = new Receipt(ticketId, ticket.getVehicle().getPlateNumber(),
+                ticket.getSlot().getSlotId(), hours, method.getMethodName(), fee);
+        receipts.add(receipt);
+        return receipt;
     }
 }

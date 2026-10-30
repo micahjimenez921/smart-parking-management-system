@@ -25,7 +25,8 @@ public class ParkingApi {
         int total = lot.getSlots().size();
         int free = lot.getAvailableCount();
         return "{"
-                + "\"total\":" + total
+                + "\"lotName\":" + Json.quote(lot.getName())
+                + ",\"total\":" + total
                 + ",\"available\":" + free
                 + ",\"occupied\":" + (total - free)
                 + ",\"revenue\":" + lot.getTotalRevenue()
@@ -49,7 +50,11 @@ public class ParkingApi {
             if (t != null) {
                 sb.append(",\"plate\":").append(Json.quote(t.getVehicle().getPlateNumber()))
                         .append(",\"vehicleType\":").append(Json.quote(t.getVehicle().getVehicleType()))
-                        .append(",\"ticketId\":").append(Json.quote(t.getTicketId()));
+                        .append(",\"owner\":").append(Json.quote(t.getVehicle().getOwnerName()))
+                        .append(",\"ticketId\":").append(Json.quote(t.getTicketId()))
+                        .append(",\"entryTime\":").append(Json.quote(t.getEntryTime().toString()))
+                        .append(",\"hours\":").append(t.getHoursParked())
+                        .append(",\"fee\":").append(t.calculateFee());
             }
             sb.append("}");
         }

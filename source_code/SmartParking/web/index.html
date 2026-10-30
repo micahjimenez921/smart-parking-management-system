@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartPark</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <h1>SmartPark</h1>
+    <p class="subtitle">Live data from the Java parking system</p>
+
+    <section class="stats">
+      <div class="stat"><span class="label">Total slots</span><span class="value" id="stat-total">-</span></div>
+      <div class="stat"><span class="label">Available</span><span class="value free" id="stat-available">-</span></div>
+      <div class="stat"><span class="label">Occupied</span><span class="value busy" id="stat-occupied">-</span></div>
+      <div class="stat"><span class="label">Revenue</span><span class="value" id="stat-revenue">-</span></div>
+    </section>
+
+    <h2>Slots</h2>
+    <table>
+      <thead>
+        <tr><th>Slot</th><th>Type</th><th>Rate per hour</th><th>Status</th><th>Vehicle</th><th>Ticket</th></tr>
+      </thead>
+      <tbody id="slot-rows"></tbody>
+    </table>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

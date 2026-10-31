@@ -226,24 +226,141 @@
           </div>
         </section>
 
-        <section class="view" id="view-tickets">
-          <div class="card placeholder">
+               <section class="view" id="view-tickets">
+          <div class="page-head">
             <h1>Tickets</h1>
-            <p class="muted">This page is built in a later step.</p>
+            <p class="muted">Vehicles parked right now and the latest payments</p>
+          </div>
+
+          <div class="card table-card">
+            <div class="card-head">
+              <div>
+                <h2>Active tickets</h2>
+                <p class="muted" id="tickets-count">&nbsp;</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Ticket</th><th>Plate</th><th>Vehicle</th><th>Slot</th>
+                    <th>Entered</th><th>Hours</th><th>Fee so far</th><th></th>
+                  </tr>
+                </thead>
+                <tbody id="tickets-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="card-head">
+              <div>
+                <h2>Recent payments</h2>
+                <p class="muted">The 10 most recent checkouts</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Ticket</th><th>Plate</th><th>Slot</th><th>Method</th><th>Amount</th><th>Paid at</th>
+                  </tr>
+                </thead>
+                <tbody id="payments-body"></tbody>
+              </table>
+            </div>
           </div>
         </section>
 
         <section class="view" id="view-reports">
-          <div class="card placeholder">
+          <div class="page-head">
             <h1>Reports</h1>
-            <p class="muted">Charts for revenue and parking duration come in a later step.</p>
+            <p class="muted">Revenue, parking duration, and payment methods</p>
           </div>
+
+          <div class="stats">
+            <div class="card stat-card">
+              <div>
+                <div class="stat-value" id="rpt-today">-</div>
+                <div class="stat-label">Today's revenue</div>
+                <div class="stat-meta" id="rpt-today-meta">&nbsp;</div>
+              </div>
+              <span class="stat-icon tone-green">
+                <svg class="ico" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              </span>
+            </div>
+
+            <div class="card stat-card">
+              <div>
+                <div class="stat-value" id="rpt-total">-</div>
+                <div class="stat-label">Total revenue</div>
+                <div class="stat-meta" id="rpt-total-meta">&nbsp;</div>
+              </div>
+              <span class="stat-icon tone-blue">
+                <svg class="ico" viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+              </span>
+            </div>
+
+            <div class="card stat-card">
+              <div>
+                <div class="stat-value" id="rpt-count">-</div>
+                <div class="stat-label">Payments</div>
+                <div class="stat-meta" id="rpt-count-meta">&nbsp;</div>
+              </div>
+              <span class="stat-icon tone-amber">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </span>
+            </div>
+
+            <div class="card stat-card">
+              <div>
+                <div class="stat-value" id="rpt-avg">-</div>
+                <div class="stat-label">Average stay</div>
+                <div class="stat-meta" id="rpt-avg-meta">&nbsp;</div>
+              </div>
+              <span class="stat-icon tone-red">
+                <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="grid-charts">
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2>Revenue</h2>
+                  <p class="muted">Payments collected per day</p>
+                </div>
+                <div class="filters" id="range-chips">
+                  <button class="chip active" data-range="7">7 days</button>
+                  <button class="chip" data-range="30">30 days</button>
+                </div>
+              </div>
+              <div class="chart" id="chart-revenue"></div>
+            </div>
+
+            <div class="card">
+              <h2>Payment methods</h2>
+              <p class="muted">Share of all payments</p>
+              <div class="chart" id="chart-methods"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Parking duration</h2>
+            <p class="muted">How many vehicles stayed each number of hours</p>
+            <div class="chart" id="chart-duration"></div>
+          </div>
+
+          <p class="muted note">Sample payment history is included so the charts have data to show. New payments you take are added to it.</p>
         </section>
       </main>
     </div>
   </div>
 
     <script src="app.js"></script>
-  <script src="flows.js"></script>
+    <script src="flows.js"></script>
+    <script src="charts.js"></script>
+    <script src="pages.js"></script>
 </body>
 </html>

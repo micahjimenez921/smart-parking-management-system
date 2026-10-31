@@ -17,7 +17,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ParkingApi {
@@ -30,6 +33,8 @@ public class ParkingApi {
     public void register(WebServer server) {
         server.addRoute("/api/stats", exchange -> sendJson(exchange, 200, statsJson()));
         server.addRoute("/api/slots", exchange -> sendJson(exchange, 200, slotsJson()));
+        server.addRoute("/api/tickets", exchange -> sendJson(exchange, 200, ticketsJson()));
+        server.addRoute("/api/receipts", this::handleReceipts);
         server.addRoute("/api/ticket", this::handleTicket);
         server.addRoute("/api/park", this::handlePark);
         server.addRoute("/api/checkout", this::handleCheckout);
@@ -92,6 +97,29 @@ public class ParkingApi {
                 + "}";
     }
 
+    private String ticketsJson() {
+        StringBuilder sb = new StringBuilder("[");
+        boolean first = true;
+        for (Ticket t : lot.getActiveTickets()) {
+            if (!first) sb.append(",");
+            first = false;
+            sb.append(ticketJson(t));
+        }
+        return sb.append("]").toString();
+    }
+
+    private String receiptRowJson(Receipt r) {
+        return "{"
+                + "\"ticketId\":" + Json.quote(r.getTicketId())
+                + ",\"plate\":" + Json.quote(r.getPlateNumber())
+                + ",\"slotId\":" + Json.quote(r.getSlotId())
+                + ",\"hours\":" + r.getHours()
+                + ",\"method\":" + Json.quote(r.getMethodName())
+                + ",\"amount\":" + r.getAmount()
+                + ",\"time\":" + Json.quote(r.getTime().toString())
+                + "}";
+    }
+
     private String receiptJson(Receipt r, double change) {
         return "{"
                 + "\"ticketId\":" + Json.quote(r.getTicketId())
@@ -106,6 +134,31 @@ public class ParkingApi {
     }
 
     /* ---------- actions ---------- */
+
+    private void handleReceipts(HttpExchange exchange) throws IOException {
+        if (!"GET".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Use GET for this address.");
+            return;
+        }
+        Map<String, String> query = parseForm(exchange.getRequestURI().getRawQuery());
+        int limit = 100;
+        try {
+            limit = Integer.parseInt(query.getOrDefault("limit", "100"));
+        } catch (NumberFormatException e) {
+            /* keep the default */
+        }
+        limit = Math.max(1, Math.min(limit, 1000));
+
+        List<Receipt> newestFirst = new ArrayList<>(lot.getReceipts());
+        newestFirst.sort(Comparator.comparing(Receipt::getTime).reversed());
+
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < newestFirst.size() && i < limit; i++) {
+            if (i > 0) sb.append(",");
+            sb.append(receiptRowJson(newestFirst.get(i)));
+        }
+        sendJson(exchange, 200, sb.append("]").toString());
+    }
 
     private void handleTicket(HttpExchange exchange) throws IOException {
         if (!"GET".equals(exchange.getRequestMethod())) {

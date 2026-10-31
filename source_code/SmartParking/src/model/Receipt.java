@@ -13,13 +13,18 @@ public class Receipt {
 
     public Receipt(String ticketId, String plateNumber, String slotId,
                    long hours, String methodName, double amount) {
+        this(ticketId, plateNumber, slotId, hours, methodName, amount, LocalDateTime.now());
+    }
+
+    public Receipt(String ticketId, String plateNumber, String slotId,
+                   long hours, String methodName, double amount, LocalDateTime time) {
         this.ticketId = ticketId;
         this.plateNumber = plateNumber;
         this.slotId = slotId;
         this.hours = hours;
         this.methodName = methodName;
         this.amount = amount;
-        this.time = LocalDateTime.now();
+        this.time = time;
     }
 
     public String getTicketId() { return ticketId; }

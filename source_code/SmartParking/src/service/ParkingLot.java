@@ -10,6 +10,7 @@ import model.Vehicle;
 import payment.PaymentMethod;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,16 @@ public class ParkingLot {
             if (s.isAvailable()) count++;
         }
         return count;
+    }
+
+    public void addReceipt(Receipt receipt) {
+        receipts.add(receipt);
+    }
+
+    public List<Ticket> getActiveTickets() {
+        List<Ticket> list = new ArrayList<>(activeTickets.values());
+        list.sort(Comparator.comparing(Ticket::getEntryTime).reversed());
+        return list;
     }
 
     public double getTotalRevenue() {
@@ -115,7 +126,7 @@ public class ParkingLot {
 
         Receipt receipt = new Receipt(ticketId, ticket.getVehicle().getPlateNumber(),
                 ticket.getSlot().getSlotId(), hours, method.getMethodName(), fee);
-        receipts.add(receipt);
+        addReceipt(receipt);
         return receipt;
     }
 

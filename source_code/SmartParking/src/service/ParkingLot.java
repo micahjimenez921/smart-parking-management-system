@@ -51,6 +51,15 @@ public class ParkingLot {
         return total;
     }
 
+    public boolean isPlateParked(String plateNumber) {
+        for (Ticket t : activeTickets.values()) {
+            if (t.getVehicle().getPlateNumber().equalsIgnoreCase(plateNumber)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public ParkingSlot findAvailableSlot(String slotType) {
         for (ParkingSlot s : slots) {
             if (s.isAvailable() && s.getSlotType().equals(slotType)) {
@@ -61,6 +70,10 @@ public class ParkingLot {
     }
 
     public Ticket parkVehicle(Vehicle vehicle, String slotType) throws ParkingFullException {
+        if (isPlateParked(vehicle.getPlateNumber())) {
+            throw new IllegalStateException(
+                    "Vehicle " + vehicle.getPlateNumber() + " is already parked.");
+        }
         ParkingSlot slot = findAvailableSlot(slotType);
         if (slot == null) {
             throw new ParkingFullException("No available " + slotType + " slot.");
@@ -89,7 +102,7 @@ public class ParkingLot {
         return ticket;
     }
 
-        public Receipt checkout(String ticketId, PaymentMethod method)
+    public Receipt checkout(String ticketId, PaymentMethod method)
             throws InvalidTicketException, PaymentFailedException {
         Ticket ticket = findTicket(ticketId);
         double fee = ticket.calculateFee();

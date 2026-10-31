@@ -17,6 +17,7 @@ public class CashPayment implements PaymentMethod {
         }
     }
 
+    @Override
     public double getChange(double amount) {
         return tendered - amount;
     }

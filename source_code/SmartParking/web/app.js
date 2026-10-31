@@ -192,6 +192,10 @@ function renderDetail() {
   fee.appendChild(make("div", "k", "Fee so far"));
   fee.appendChild(make("div", "v", money(slot.fee)));
   card.appendChild(fee);
+
+  const checkout = make("button", "btn", "Check out this vehicle");
+  checkout.addEventListener("click", () => openCheckout(slot.ticketId));
+  card.appendChild(checkout);
 }
 
 function renderRates() {
@@ -237,6 +241,8 @@ async function refresh() {
     renderRates();
     renderBays();
     renderDetail();
+
+        if (typeof renderEntryAvailability === "function") renderEntryAvailability();
 
     document.getElementById("offline").hidden = true;
   } catch (error) {

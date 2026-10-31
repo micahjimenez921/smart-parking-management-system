@@ -39,7 +39,7 @@
       </nav>
 
       <div class="sidebar-foot">
-        <p>Advanced OOP project</p>
+        <p></p> 
       </div>
     </aside>
 
@@ -150,17 +150,79 @@
           </div>
         </section>
 
-        <section class="view" id="view-entry">
-          <div class="card placeholder">
+                <section class="view" id="view-entry">
+          <div class="page-head">
             <h1>Vehicle entry</h1>
-            <p class="muted">This page is built in the next step.</p>
+            <p class="muted">Register an arriving vehicle and assign it a slot</p>
+          </div>
+
+          <div class="grid-2 flow-grid">
+            <div class="card">
+              <h2>Vehicle details</h2>
+
+              <form id="entry-form" class="form" autocomplete="off" novalidate>
+                <label class="field">
+                  <span>Plate number</span>
+                  <input id="entry-plate" type="text" placeholder="e.g. ABC 123" maxlength="12">
+                </label>
+
+                <label class="field">
+                  <span>Owner name</span>
+                  <input id="entry-owner" type="text" placeholder="Driver's full name" maxlength="60">
+                </label>
+
+                <div class="field">
+                  <span>Vehicle type</span>
+                  <div class="choices" id="entry-vehicle">
+                    <button type="button" class="choice" data-value="CAR"><b>Car</b></button>
+                    <button type="button" class="choice" data-value="MOTORCYCLE"><b>Motorcycle</b></button>
+                    <button type="button" class="choice" data-value="TRUCK"><b>Truck</b></button>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <span>Slot type</span>
+                  <div class="choices" id="entry-slot">
+                    <button type="button" class="choice" id="choice-slot-REGULAR" data-value="REGULAR"><b>Regular</b><small id="info-REGULAR">&nbsp;</small></button>
+                    <button type="button" class="choice" id="choice-slot-HANDICAPPED" data-value="HANDICAPPED"><b>Handicapped</b><small id="info-HANDICAPPED">&nbsp;</small></button>
+                    <button type="button" class="choice" id="choice-slot-VIP" data-value="VIP"><b>VIP</b><small id="info-VIP">&nbsp;</small></button>
+                  </div>
+                </div>
+
+                <div class="form-msg" id="entry-msg" hidden></div>
+                <button class="btn" type="submit">Park vehicle</button>
+              </form>
+            </div>
+
+            <div class="card" id="entry-result"></div>
           </div>
         </section>
 
         <section class="view" id="view-exit">
-          <div class="card placeholder">
+          <div class="page-head">
             <h1>Exit and payment</h1>
-            <p class="muted">This page is built in the next step.</p>
+            <p class="muted">Look up a ticket, take payment, and release the slot</p>
+          </div>
+
+          <div class="grid-2 flow-grid">
+            <div class="card">
+              <h2>Find ticket</h2>
+
+              <form id="lookup-form" class="form" autocomplete="off" novalidate>
+                <label class="field">
+                  <span>Ticket ID</span>
+                  <div class="inline">
+                    <input id="exit-ticket" type="text" placeholder="e.g. T-001" maxlength="12">
+                    <button class="btn-inline" type="submit">Look up</button>
+                  </div>
+                </label>
+                <div class="form-msg" id="lookup-msg" hidden></div>
+              </form>
+
+              <div id="exit-summary"></div>
+            </div>
+
+            <div class="card" id="exit-pay"></div>
           </div>
         </section>
 
@@ -181,6 +243,7 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+    <script src="app.js"></script>
+  <script src="flows.js"></script>
 </body>
 </html>

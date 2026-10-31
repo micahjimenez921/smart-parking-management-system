@@ -15,11 +15,20 @@ public class DemoData {
     private static final boolean SEED_HISTORY = true;
 
     public static ParkingLot create() {
+        ParkingLot lot = createEmptyLot();
+        addSampleData(lot);
+        return lot;
+    }
+
+    public static ParkingLot createEmptyLot() {
         ParkingLot lot = new ParkingLot("Main Lot");
         for (int i = 1; i <= 4; i++) lot.addSlot(new RegularSlot(String.format("R-%02d", i)));
         for (int i = 1; i <= 2; i++) lot.addSlot(new HandicappedSlot(String.format("H-%02d", i)));
         for (int i = 1; i <= 2; i++) lot.addSlot(new VIPSlot(String.format("V-%02d", i)));
+        return lot;
+    }
 
+    public static void addSampleData(ParkingLot lot) {
         try {
             lot.parkVehicle(new Car("ABC123", "Ana"), "REGULAR");
             lot.parkVehicle(new Motorcycle("MOTO456", "Ben"), "REGULAR");
@@ -31,7 +40,6 @@ public class DemoData {
         if (SEED_HISTORY) {
             addSampleHistory(lot);
         }
-        return lot;
     }
 
     private static void addSampleHistory(ParkingLot lot) {

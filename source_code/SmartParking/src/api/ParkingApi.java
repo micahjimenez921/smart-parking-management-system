@@ -12,6 +12,7 @@ import model.VehicleFactory;
 import payment.PaymentFactory;
 import payment.PaymentMethod;
 import service.ParkingLot;
+import storage.ParkingRepository;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -24,10 +25,20 @@ import java.util.List;
 import java.util.Map;
 
 public class ParkingApi {
-    private final ParkingLot lot;
+        private final ParkingLot lot;
+    private final ParkingRepository repository;
 
-    public ParkingApi(ParkingLot lot) {
+    public ParkingApi(ParkingLot lot, ParkingRepository repository) {
         this.lot = lot;
+        this.repository = repository;
+    }
+
+    private void persist() {
+        try {
+            repository.save(lot);
+        } catch (IOException e) {
+            System.out.println("Warning: could not save data: " + e.getMessage());
+        }
     }
 
     public void register(WebServer server) {
@@ -205,6 +216,7 @@ public class ParkingApi {
 
         try {
             Ticket ticket = lot.parkVehicle(vehicle, slotType);
+            persist();
             sendJson(exchange, 200, ticketJson(ticket));
         } catch (ParkingFullException | IllegalStateException e) {
             sendError(exchange, 409, e.getMessage());
@@ -229,6 +241,7 @@ public class ParkingApi {
 
         try {
             Receipt receipt = lot.checkout(ticketId, method);
+            persist();
             sendJson(exchange, 200, receiptJson(receipt, method.getChange(receipt.getAmount())));
         } catch (InvalidTicketException e) {
             sendError(exchange, 404, e.getMessage());

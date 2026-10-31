@@ -44,8 +44,24 @@ public class ParkingLot {
         return count;
     }
 
-    public void addReceipt(Receipt receipt) {
+        public void addReceipt(Receipt receipt) {
         receipts.add(receipt);
+    }
+
+    public ParkingSlot findSlot(String slotId) {
+        for (ParkingSlot s : slots) {
+            if (s.getSlotId().equals(slotId)) return s;
+        }
+        return null;
+    }
+
+    public int getTicketCounter() { return ticketCounter; }
+
+    public void setTicketCounter(int value) { ticketCounter = value; }
+
+    public void restoreTicket(Ticket ticket) {
+        ticket.getSlot().occupy();
+        activeTickets.put(ticket.getTicketId(), ticket);
     }
 
     public List<Ticket> getActiveTickets() {

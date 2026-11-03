@@ -3,6 +3,8 @@ package service;
 import exception.InvalidTicketException;
 import exception.ParkingFullException;
 import exception.PaymentFailedException;
+import fee.FeeStrategy;
+import fee.HourlyFee;
 import model.ParkingSlot;
 import model.Receipt;
 import model.Ticket;
@@ -21,6 +23,7 @@ public class ParkingLot {
     private Map<String, Ticket> activeTickets = new HashMap<>();
     private List<Receipt> receipts = new ArrayList<>();
     private int ticketCounter = 0;
+    private FeeStrategy feeStrategy = new HourlyFee();
 
     public ParkingLot(String name) {
         this.name = name;
@@ -44,7 +47,7 @@ public class ParkingLot {
         return count;
     }
 
-        public void addReceipt(Receipt receipt) {
+    public void addReceipt(Receipt receipt) {
         receipts.add(receipt);
     }
 
@@ -58,6 +61,19 @@ public class ParkingLot {
     public int getTicketCounter() { return ticketCounter; }
 
     public void setTicketCounter(int value) { ticketCounter = value; }
+
+    public FeeStrategy getFeeStrategy() { return feeStrategy; }
+
+    public void setFeeStrategy(FeeStrategy strategy) {
+        if (strategy == null) {
+            throw new IllegalArgumentException("A fee strategy is required.");
+        }
+        this.feeStrategy = strategy;
+    }
+
+    public double calculateFee(Ticket ticket) {
+        return feeStrategy.calculateFee(ticket);
+    }
 
     public void restoreTicket(Ticket ticket) {
         ticket.getSlot().occupy();
@@ -132,7 +148,7 @@ public class ParkingLot {
     public Receipt checkout(String ticketId, PaymentMethod method)
             throws InvalidTicketException, PaymentFailedException {
         Ticket ticket = findTicket(ticketId);
-        double fee = ticket.calculateFee();
+        double fee = calculateFee(ticket);
         long hours = ticket.getHoursParked();
 
         method.pay(fee);

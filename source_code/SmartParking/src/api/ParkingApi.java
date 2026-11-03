@@ -86,7 +86,7 @@ public class ParkingApi {
                         .append(",\"ticketId\":").append(Json.quote(t.getTicketId()))
                         .append(",\"entryTime\":").append(Json.quote(t.getEntryTime().toString()))
                         .append(",\"hours\":").append(t.getHoursParked())
-                        .append(",\"fee\":").append(t.calculateFee());
+                        .append(",\"fee\":").append(lot.calculateFee(t));
             }
             sb.append("}");
         }
@@ -104,7 +104,7 @@ public class ParkingApi {
                 + ",\"rate\":" + t.getSlot().getHourlyRate()
                 + ",\"entryTime\":" + Json.quote(t.getEntryTime().toString())
                 + ",\"hours\":" + t.getHoursParked()
-                + ",\"fee\":" + t.calculateFee()
+                + ",\"fee\":" + lot.calculateFee(t)
                 + "}";
     }
 

@@ -2,6 +2,7 @@ package app;
 
 import api.ParkingApi;
 import api.WebServer;
+import fee.DailyCapFee;
 import service.ParkingLot;
 import storage.FileParkingRepository;
 import storage.ParkingRepository;
@@ -41,6 +42,7 @@ public class WebMain {
             System.out.println("No saved data found. Started with sample data and saved it to " + dataFile + ".");
         }
 
+        lot.setFeeStrategy(new DailyCapFee(8));
         WebServer server = new WebServer(8080, webRoot);
         new ParkingApi(lot, repository).register(server);
         server.start();

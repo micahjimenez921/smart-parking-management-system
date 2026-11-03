@@ -37,10 +37,6 @@ public class Ticket {
         return Math.max(1, hours);
     }
 
-    public double calculateFee() {
-        return getHoursParked() * slot.getHourlyRate();
-    }
-
     public void markPaid() {
         status = TicketStatus.PAID;
     }

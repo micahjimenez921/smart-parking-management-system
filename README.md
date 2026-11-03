@@ -8,7 +8,7 @@ A web-based Object-Oriented Parking Management System written in Java that autom
 
 The Smart Parking Management System is a capstone project developed for the Object-Oriented Programming course. It simulates the complete lifecycle of a driver entering a parking facility, being assigned a parking slot, having their parking duration tracked, paying the computed fee, and exiting the premises.
 
-The system is built entirely around Object-Oriented design principles — encapsulation, inheritance, polymorphism, and abstraction — and is modeled using UML diagrams (Use Case, Class, Sequence, and Activity) that stay fully consistent with the implementation.
+The system is built entirely around Object-Oriented design principles — encapsulation, inheritance, polymorphism, and abstraction — and is modeled using UML diagrams (Use Case, Class, Sequence, and Activity).
 
 ### The system supports two primary actors:
 

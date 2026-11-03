@@ -4,6 +4,9 @@ import app.DemoData;
 import exception.InvalidTicketException;
 import exception.ParkingFullException;
 import exception.PaymentFailedException;
+import fee.DailyCapFee;
+import fee.FeeStrategy;
+import fee.HourlyFee;
 import model.*;
 import payment.*;
 import service.ParkingLot;
@@ -30,6 +33,7 @@ public class ParkingTests {
 
     public static void main(String[] args) {
         runSection("Fee calculation", ParkingTests::feeTests);
+        runSection("Fee strategies", ParkingTests::feeStrategyTests);
         runSection("Parking slots (encapsulation)", ParkingTests::slotTests);
         runSection("Polymorphism", ParkingTests::polymorphismTests);
         runSection("ParkingLot rules", ParkingTests::parkingLotTests);
@@ -63,16 +67,53 @@ public class ParkingTests {
         ParkingSlot regular = new RegularSlot("R-99");
         ParkingSlot handicapped = new HandicappedSlot("H-99");
         Vehicle car = new Car("TEST 1", "Tester");
+        FeeStrategy hourly = new HourlyFee();
 
         checkEquals("2 hours 10 minutes in a VIP slot rounds up to 3 hours = 150",
-                150.0, ticketAged(car, vip, 130).calculateFee());
+                150.0, hourly.calculateFee(ticketAged(car, vip, 130)));
         checkEquals("exactly 60 minutes in a Regular slot = 1 hour = 20",
-                20.0, ticketAged(car, regular, 60).calculateFee());
+                20.0, hourly.calculateFee(ticketAged(car, regular, 60)));
         checkEquals("61 minutes in a Regular slot = 2 hours = 40",
-                40.0, ticketAged(car, regular, 61).calculateFee());
+                40.0, hourly.calculateFee(ticketAged(car, regular, 61)));
         checkEquals("5 minutes in a Handicapped slot is charged the 1 hour minimum = 15",
-                15.0, ticketAged(car, handicapped, 5).calculateFee());
+                15.0, hourly.calculateFee(ticketAged(car, handicapped, 5)));
         checkEquals("hours charged for 130 minutes", 3L, ticketAged(car, vip, 130).getHoursParked());
+    }
+
+    private static void feeStrategyTests() throws Exception {
+        ParkingSlot regular = new RegularSlot("R-99");
+        Vehicle car = new Car("TEST 2", "Tester");
+        FeeStrategy capped = new DailyCapFee(8);
+
+        checkEquals("daily cap: 3 hours is below the cap = 60",
+                60.0, capped.calculateFee(ticketAged(car, regular, 180)));
+        checkEquals("daily cap: 8 hours = exactly the cap = 160",
+                160.0, capped.calculateFee(ticketAged(car, regular, 480)));
+        checkEquals("daily cap: 10 hours is held at the cap = 160 (hourly would be 200)",
+                160.0, capped.calculateFee(ticketAged(car, regular, 600)));
+        checkEquals("daily cap: a full 24 hours costs one daily maximum = 160",
+                160.0, capped.calculateFee(ticketAged(car, regular, 1440)));
+        checkEquals("daily cap: 25 hours = one daily maximum + 1 hour = 180",
+                180.0, capped.calculateFee(ticketAged(car, regular, 1500)));
+        checkEquals("daily cap: 2 days and 3 hours = 2 maximums + 60 = 380",
+                380.0, capped.calculateFee(ticketAged(car, regular, 2 * 1440 + 180)));
+
+        checkThrows("a daily cap of 0 hours is rejected", IllegalArgumentException.class,
+                () -> new DailyCapFee(0));
+        checkThrows("a daily cap of 25 hours is rejected", IllegalArgumentException.class,
+                () -> new DailyCapFee(25));
+
+        ParkingLot lot = DemoData.createEmptyLot();
+        Ticket tenHours = ticketAged(car, regular, 600);
+        checkEquals("a lot starts with the plain hourly rule", 200.0, lot.calculateFee(tenHours));
+        lot.setFeeStrategy(capped);
+        checkEquals("changing the lot's strategy changes its fees", 160.0, lot.calculateFee(tenHours));
+        checkThrows("a lot refuses a missing strategy", IllegalArgumentException.class,
+                () -> lot.setFeeStrategy(null));
+
+        lot.restoreTicket(new Ticket("T-050", car, lot.findSlot("R-01"), LocalDateTime.now().minusMinutes(600)));
+        Receipt receipt = lot.checkout("T-050", new CashPayment(1000));
+        checkEquals("checkout charges what the lot's strategy says", 160.0, receipt.getAmount());
     }
 
     private static Ticket ticketAged(Vehicle vehicle, ParkingSlot slot, int minutes) {

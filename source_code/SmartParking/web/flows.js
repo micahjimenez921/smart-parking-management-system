@@ -1,7 +1,7 @@
 /* Vehicle entry and exit pages. Uses helpers from app.js. */
 
 const entryState = { vehicleType: "CAR", slotType: "REGULAR", ticket: null };
-const exitState = { ticket: null, method: "CASH", receipt: null };
+const exitState = { ticket: null, method: "CASH", receipt: null, lost: false };
 
 const SLOT_TYPES = ["REGULAR", "HANDICAPPED", "VIP"];
 const METHOD_LABEL = { CASH: "Cash", CARD: "Card", ONLINE: "Online" };
@@ -181,10 +181,11 @@ function renderExitSummary() {
   plainRow(rows, "Slot", t.slotId + " (" + (TYPE_LABEL[t.slotType] || t.slotType) + ")");
   plainRow(rows, "Entered", formatEntry(t.entryTime));
   plainRow(rows, "Hours charged", String(t.hours));
+  if (t.lostTicket) plainRow(rows, "Lost ticket penalty", money(t.penalty));
   box.appendChild(rows);
 
   const fee = make("div", "fee-box");
-  fee.appendChild(make("div", "k", "Amount due"));
+  fee.appendChild(make("div", "k", t.lostTicket ? "Amount due, including the penalty" : "Amount due"));
   fee.appendChild(make("div", "v", money(t.fee)));
   box.appendChild(fee);
 }
@@ -282,6 +283,7 @@ function renderReceipt(card, receipt) {
   plainRow(rows, "Vehicle", receipt.plate);
   plainRow(rows, "Slot", receipt.slotId);
   plainRow(rows, "Hours charged", String(receipt.hours));
+  if (receipt.penalty > 0) plainRow(rows, "Lost ticket penalty", money(receipt.penalty));
   plainRow(rows, "Method", METHOD_LABEL[receipt.method] || receipt.method);
   plainRow(rows, "Amount paid", money(receipt.amount));
   if (receipt.change > 0) plainRow(rows, "Change", money(receipt.change));
@@ -292,6 +294,7 @@ function renderReceipt(card, receipt) {
   next.addEventListener("click", () => {
     exitState.receipt = null;
     exitState.ticket = null;
+    setLostMode(false);
     document.getElementById("exit-ticket").value = "";
     setMessage(document.getElementById("lookup-msg"), "", "");
     renderExit();
@@ -313,12 +316,15 @@ async function lookupTicket(rawId) {
   if (id === "") {
     exitState.ticket = null;
     renderExit();
-    setMessage(message, "Enter a ticket ID.", "error");
+    setMessage(message, exitState.lost ? "Enter the plate number." : "Enter a ticket ID.", "error");
     return;
   }
 
   try {
-    exitState.ticket = await sendRequest("/api/ticket?id=" + encodeURIComponent(id));
+    const url = exitState.lost
+      ? "/api/ticket?lost=true&plate=" + encodeURIComponent(id)
+      : "/api/ticket?id=" + encodeURIComponent(id);
+    exitState.ticket = await sendRequest(url);
   } catch (error) {
     exitState.ticket = null;
     setMessage(message, error.message, "error");
@@ -332,7 +338,8 @@ async function submitPayment(detail, message) {
     exitState.receipt = await postForm("/api/checkout", {
       ticketId: exitState.ticket.ticketId,
       method: exitState.method,
-      detail: detail
+      detail: detail,
+      lost: exitState.lost ? "true" : "false"
     });
     exitState.ticket = null;
     renderExit();
@@ -342,7 +349,15 @@ async function submitPayment(detail, message) {
   }
 }
 
+function setLostMode(on) {
+  exitState.lost = on;
+  document.getElementById("lookup-label").textContent = on ? "Plate number" : "Ticket ID";
+  document.getElementById("exit-ticket").setAttribute("placeholder", on ? "e.g. ABC 123" : "e.g. T-001");
+  document.getElementById("lost-toggle").textContent = on ? "I have my ticket" : "I lost my ticket";
+}
+
 function openCheckout(ticketId) {
+  setLostMode(false);
   document.getElementById("exit-ticket").value = ticketId;
   showView("exit");
   lookupTicket(ticketId);
@@ -361,6 +376,15 @@ document.getElementById("entry-form").addEventListener("submit", submitEntry);
 document.getElementById("lookup-form").addEventListener("submit", event => {
   event.preventDefault();
   lookupTicket(document.getElementById("exit-ticket").value);
+});
+
+document.getElementById("lost-toggle").addEventListener("click", () => {
+  setLostMode(!exitState.lost);
+  exitState.ticket = null;
+  exitState.receipt = null;
+  document.getElementById("exit-ticket").value = "";
+  setMessage(document.getElementById("lookup-msg"), "", "");
+  renderExit();
 });
 
 renderEntryAvailability();

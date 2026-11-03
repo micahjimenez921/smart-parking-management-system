@@ -146,6 +146,7 @@
               <div class="card">
                 <h2>Rates</h2>
                 <ul class="rates" id="rates"></ul>
+                <p class="muted note" id="fee-rule"></p>
               </div>
             </div>
           </div>
@@ -211,12 +212,13 @@
 
               <form id="lookup-form" class="form" autocomplete="off" novalidate>
                 <label class="field">
-                  <span>Ticket ID</span>
+                  <span id="lookup-label">Ticket ID</span>
                   <div class="inline">
                     <input id="exit-ticket" type="text" placeholder="e.g. T-001" maxlength="12">
                     <button class="btn-inline" type="submit">Look up</button>
                   </div>
                 </label>
+                <button type="button" class="link-btn" id="lost-toggle">I lost my ticket</button>
                 <div class="form-msg" id="lookup-msg" hidden></div>
               </form>
 

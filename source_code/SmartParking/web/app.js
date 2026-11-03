@@ -106,6 +106,10 @@ function renderStats(stats) {
   if (stats.lotName) {
     document.getElementById("lot-subtitle").textContent = "Live overview of " + stats.lotName;
   }
+  const ruleNode = document.getElementById("fee-rule");
+  if (ruleNode && stats.feeRule) {
+    ruleNode.textContent = stats.feeRule + ". Lost ticket penalty: " + money(stats.lostTicketPenalty) + ".";
+  }
 }
 
 function renderBays() {

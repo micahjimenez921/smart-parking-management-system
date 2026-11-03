@@ -796,3 +796,15 @@ h2 { font-size: 17px; }
 
 
 .chart-value { fill: var(--text); font-size: 13px; font-weight: 700; font-family: inherit; }
+
+
+.link-btn {
+  margin: -6px 0 16px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.link-btn:hover { text-decoration: underline; }

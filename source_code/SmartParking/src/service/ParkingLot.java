@@ -5,6 +5,7 @@ import exception.ParkingFullException;
 import exception.PaymentFailedException;
 import fee.FeeStrategy;
 import fee.HourlyFee;
+import fee.PenaltyFee;
 import model.ParkingSlot;
 import model.Receipt;
 import model.Ticket;
@@ -24,6 +25,7 @@ public class ParkingLot {
     private List<Receipt> receipts = new ArrayList<>();
     private int ticketCounter = 0;
     private FeeStrategy feeStrategy = new HourlyFee();
+    private double lostTicketPenalty = 100.0;
 
     public ParkingLot(String name) {
         this.name = name;
@@ -75,6 +77,19 @@ public class ParkingLot {
         return feeStrategy.calculateFee(ticket);
     }
 
+    public double getLostTicketPenalty() { return lostTicketPenalty; }
+
+    public void setLostTicketPenalty(double penalty) {
+        if (Double.isNaN(penalty) || Double.isInfinite(penalty) || penalty < 0) {
+            throw new IllegalArgumentException("The penalty must be zero or more.");
+        }
+        this.lostTicketPenalty = penalty;
+    }
+
+    public double calculateLostTicketFee(Ticket ticket) {
+        return new PenaltyFee(feeStrategy, lostTicketPenalty).calculateFee(ticket);
+    }
+
     public void restoreTicket(Ticket ticket) {
         ticket.getSlot().occupy();
         activeTickets.put(ticket.getTicketId(), ticket);
@@ -94,9 +109,14 @@ public class ParkingLot {
         return total;
     }
 
+       private static String normalizePlate(String plateNumber) {
+        return plateNumber.replaceAll("[\\s-]", "").toUpperCase();
+    }
+
     public boolean isPlateParked(String plateNumber) {
+        String wanted = normalizePlate(plateNumber);
         for (Ticket t : activeTickets.values()) {
-            if (t.getVehicle().getPlateNumber().equalsIgnoreCase(plateNumber)) {
+            if (normalizePlate(t.getVehicle().getPlateNumber()).equals(wanted)) {
                 return true;
             }
         }
@@ -137,6 +157,16 @@ public class ParkingLot {
         return ticket;
     }
 
+    public Ticket findTicketByPlate(String plateNumber) throws InvalidTicketException {
+        String wanted = normalizePlate(plateNumber);
+        for (Ticket t : activeTickets.values()) {
+            if (normalizePlate(t.getVehicle().getPlateNumber()).equals(wanted)) {
+                return t;
+            }
+        }
+        throw new InvalidTicketException("No parked vehicle with plate " + plateNumber.trim() + ".");
+    }
+
     public Ticket exitVehicle(String ticketId) throws InvalidTicketException {
         Ticket ticket = findTicket(ticketId);
         ticket.getSlot().vacate();
@@ -147,8 +177,13 @@ public class ParkingLot {
 
     public Receipt checkout(String ticketId, PaymentMethod method)
             throws InvalidTicketException, PaymentFailedException {
+        return checkout(ticketId, method, false);
+    }
+
+    public Receipt checkout(String ticketId, PaymentMethod method, boolean lostTicket)
+            throws InvalidTicketException, PaymentFailedException {
         Ticket ticket = findTicket(ticketId);
-        double fee = calculateFee(ticket);
+        double fee = lostTicket ? calculateLostTicketFee(ticket) : calculateFee(ticket);
         long hours = ticket.getHoursParked();
 
         method.pay(fee);

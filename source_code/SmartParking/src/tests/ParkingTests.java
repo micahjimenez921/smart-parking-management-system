@@ -7,6 +7,7 @@ import exception.PaymentFailedException;
 import fee.DailyCapFee;
 import fee.FeeStrategy;
 import fee.HourlyFee;
+import fee.PenaltyFee;
 import model.*;
 import payment.*;
 import service.ParkingLot;
@@ -34,6 +35,7 @@ public class ParkingTests {
     public static void main(String[] args) {
         runSection("Fee calculation", ParkingTests::feeTests);
         runSection("Fee strategies", ParkingTests::feeStrategyTests);
+        runSection("Lost ticket", ParkingTests::lostTicketTests);
         runSection("Parking slots (encapsulation)", ParkingTests::slotTests);
         runSection("Polymorphism", ParkingTests::polymorphismTests);
         runSection("ParkingLot rules", ParkingTests::parkingLotTests);
@@ -116,6 +118,51 @@ public class ParkingTests {
         checkEquals("checkout charges what the lot's strategy says", 160.0, receipt.getAmount());
     }
 
+        private static void lostTicketTests() throws Exception {
+        ParkingSlot regular = new RegularSlot("R-99");
+        Vehicle car = new Car("TEST 3", "Tester");
+
+        FeeStrategy lostHourly = new PenaltyFee(new HourlyFee(), 100);
+        checkEquals("penalty fee: 3 hours (60) plus the 100 penalty = 160",
+                160.0, lostHourly.calculateFee(ticketAged(car, regular, 180)));
+
+        FeeStrategy lostCapped = new PenaltyFee(new DailyCapFee(8), 100);
+        checkEquals("penalty fee wraps any rule: 10 hours capped at 160 plus 100 = 260",
+                260.0, lostCapped.calculateFee(ticketAged(car, regular, 600)));
+
+        checkThrows("a penalty fee needs a base rule", IllegalArgumentException.class,
+                () -> new PenaltyFee(null, 100));
+        checkThrows("a negative penalty is rejected", IllegalArgumentException.class,
+                () -> new PenaltyFee(new HourlyFee(), -1));
+
+        ParkingLot lot = DemoData.createEmptyLot();
+        Ticket ticket = lot.parkVehicle(new Car("LOST 111", "Lola"), "REGULAR");
+
+        checkEquals("a vehicle can be found by plate, ignoring capitals and spaces around it",
+                ticket.getTicketId(), lot.findTicketByPlate("  lost 111 ").getTicketId());
+        checkEquals("a plate typed without the space still finds the vehicle",
+                ticket.getTicketId(), lot.findTicketByPlate("LOST111").getTicketId());
+        checkEquals("a plate typed with a dash still finds the vehicle",
+                ticket.getTicketId(), lot.findTicketByPlate("lost-111").getTicketId());
+        checkThrows("an unknown plate is refused", InvalidTicketException.class,
+                () -> lot.findTicketByPlate("NOPE 999"));
+
+        checkEquals("default lost ticket penalty", 100.0, lot.getLostTicketPenalty());
+        checkEquals("lost ticket fee = normal fee + penalty", 120.0, lot.calculateLostTicketFee(ticket));
+        checkThrows("a negative lot penalty is rejected", IllegalArgumentException.class,
+                () -> lot.setLostTicketPenalty(-5));
+
+        checkThrows("paying the normal fee is not enough for a lost ticket", PaymentFailedException.class,
+                () -> lot.checkout(ticket.getTicketId(), new CashPayment(20), true));
+        check("a failed lost ticket payment keeps the vehicle parked", !ticket.getSlot().isAvailable());
+
+        PaymentMethod cash = new CashPayment(500);
+        Receipt receipt = lot.checkout(ticket.getTicketId(), cash, true);
+        checkEquals("lost ticket receipt includes the penalty", 120.0, receipt.getAmount());
+        checkEquals("change after a lost ticket payment", 380.0, cash.getChange(receipt.getAmount()));
+        check("the slot is free after a lost ticket payment", ticket.getSlot().isAvailable());
+    }
+
     private static Ticket ticketAged(Vehicle vehicle, ParkingSlot slot, int minutes) {
         return new Ticket("TEST", vehicle, slot, LocalDateTime.now().minusMinutes(minutes));
     }
@@ -167,6 +214,8 @@ public class ParkingTests {
         checkThrows("the same plate cannot be parked twice", IllegalStateException.class,
                 () -> lot.parkVehicle(new Car("aaa 111", "Ana again"), "REGULAR"));
 
+        checkThrows("the same plate typed without the space is still a duplicate", IllegalStateException.class,
+                () -> lot.parkVehicle(new Car("AAA111", "Ana again"), "REGULAR"));
         checkThrows("looking up an unknown ticket is refused", InvalidTicketException.class,
                 () -> lot.findTicket("T-999"));
 

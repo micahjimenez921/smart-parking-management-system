@@ -109,7 +109,7 @@ public class ParkingLot {
         return total;
     }
 
-       private static String normalizePlate(String plateNumber) {
+    private static String normalizePlate(String plateNumber) {
         return plateNumber.replaceAll("[\\s-]", "").toUpperCase();
     }
 

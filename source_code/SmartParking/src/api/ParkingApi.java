@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ParkingApi {
-        private final ParkingLot lot;
+    private final ParkingLot lot;
     private final ParkingRepository repository;
 
     public ParkingApi(ParkingLot lot, ParkingRepository repository) {
@@ -62,6 +62,8 @@ public class ParkingApi {
                 + ",\"available\":" + free
                 + ",\"occupied\":" + (total - free)
                 + ",\"revenue\":" + lot.getTotalRevenue()
+                + ",\"feeRule\":" + Json.quote(lot.getFeeStrategy().getDescription())
+                + ",\"lostTicketPenalty\":" + lot.getLostTicketPenalty()
                 + "}";
     }
 
@@ -94,6 +96,11 @@ public class ParkingApi {
     }
 
     private String ticketJson(Ticket t) {
+        return ticketJson(t, false);
+    }
+
+    private String ticketJson(Ticket t, boolean lostTicket) {
+        double fee = lostTicket ? lot.calculateLostTicketFee(t) : lot.calculateFee(t);
         return "{"
                 + "\"ticketId\":" + Json.quote(t.getTicketId())
                 + ",\"plate\":" + Json.quote(t.getVehicle().getPlateNumber())
@@ -104,7 +111,9 @@ public class ParkingApi {
                 + ",\"rate\":" + t.getSlot().getHourlyRate()
                 + ",\"entryTime\":" + Json.quote(t.getEntryTime().toString())
                 + ",\"hours\":" + t.getHoursParked()
-                + ",\"fee\":" + lot.calculateFee(t)
+                + ",\"fee\":" + fee
+                + ",\"lostTicket\":" + lostTicket
+                + ",\"penalty\":" + (lostTicket ? lot.getLostTicketPenalty() : 0.0)
                 + "}";
     }
 
@@ -131,7 +140,7 @@ public class ParkingApi {
                 + "}";
     }
 
-    private String receiptJson(Receipt r, double change) {
+    private String receiptJson(Receipt r, double change, double penalty) {
         return "{"
                 + "\"ticketId\":" + Json.quote(r.getTicketId())
                 + ",\"plate\":" + Json.quote(r.getPlateNumber())
@@ -140,6 +149,7 @@ public class ParkingApi {
                 + ",\"method\":" + Json.quote(r.getMethodName())
                 + ",\"amount\":" + r.getAmount()
                 + ",\"change\":" + change
+                + ",\"penalty\":" + penalty
                 + ",\"time\":" + Json.quote(r.getTime().toString())
                 + "}";
     }
@@ -178,9 +188,12 @@ public class ParkingApi {
         }
         Map<String, String> query = parseForm(exchange.getRequestURI().getRawQuery());
         String id = query.getOrDefault("id", "").trim().toUpperCase();
+        String plate = query.getOrDefault("plate", "").trim();
+        boolean lost = "true".equals(query.get("lost"));
 
         try {
-            sendJson(exchange, 200, ticketJson(lot.findTicket(id)));
+            Ticket ticket = plate.isEmpty() ? lot.findTicket(id) : lot.findTicketByPlate(plate);
+            sendJson(exchange, 200, ticketJson(ticket, lost));
         } catch (InvalidTicketException e) {
             sendError(exchange, 404, e.getMessage());
         }
@@ -230,6 +243,7 @@ public class ParkingApi {
         }
         Map<String, String> form = readForm(exchange);
         String ticketId = form.getOrDefault("ticketId", "").trim().toUpperCase();
+        boolean lost = "true".equals(form.get("lost"));
 
         PaymentMethod method;
         try {
@@ -240,9 +254,10 @@ public class ParkingApi {
         }
 
         try {
-            Receipt receipt = lot.checkout(ticketId, method);
+            Receipt receipt = lot.checkout(ticketId, method, lost);
             persist();
-            sendJson(exchange, 200, receiptJson(receipt, method.getChange(receipt.getAmount())));
+            double penalty = lost ? lot.getLostTicketPenalty() : 0.0;
+            sendJson(exchange, 200, receiptJson(receipt, method.getChange(receipt.getAmount()), penalty));
         } catch (InvalidTicketException e) {
             sendError(exchange, 404, e.getMessage());
         } catch (PaymentFailedException e) {

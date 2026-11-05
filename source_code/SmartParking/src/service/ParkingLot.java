@@ -6,6 +6,7 @@ import exception.PaymentFailedException;
 import fee.FeeStrategy;
 import fee.HourlyFee;
 import fee.PenaltyFee;
+import gate.GateController;
 import model.ParkingSlot;
 import model.Receipt;
 import model.Ticket;
@@ -26,6 +27,8 @@ public class ParkingLot {
     private int ticketCounter = 0;
     private FeeStrategy feeStrategy = new HourlyFee();
     private double lostTicketPenalty = 100.0;
+    private final GateController entryGate = new GateController("ENTRY", 15);
+    private final GateController exitGate = new GateController("EXIT", 15);
 
     public ParkingLot(String name) {
         this.name = name;
@@ -90,6 +93,16 @@ public class ParkingLot {
         return new PenaltyFee(feeStrategy, lostTicketPenalty).calculateFee(ticket);
     }
 
+    public GateController getEntryGate() { return entryGate; }
+
+    public GateController getExitGate() { return exitGate; }
+
+    public GateController findGate(String gateId) {
+        if (entryGate.getGateId().equalsIgnoreCase(gateId)) return entryGate;
+        if (exitGate.getGateId().equalsIgnoreCase(gateId)) return exitGate;
+        return null;
+    }
+
     public void restoreTicket(Ticket ticket) {
         ticket.getSlot().occupy();
         activeTickets.put(ticket.getTicketId(), ticket);
@@ -146,6 +159,7 @@ public class ParkingLot {
         String id = String.format("T-%03d", ticketCounter);
         Ticket ticket = new Ticket(id, vehicle, slot);
         activeTickets.put(id, ticket);
+        entryGate.open(vehicle.getPlateNumber());
         return ticket;
     }
 
@@ -194,6 +208,7 @@ public class ParkingLot {
         Receipt receipt = new Receipt(ticketId, ticket.getVehicle().getPlateNumber(),
                 ticket.getSlot().getSlotId(), hours, method.getMethodName(), fee);
         addReceipt(receipt);
+        exitGate.open(receipt.getPlateNumber());
         return receipt;
     }
 

@@ -808,3 +808,39 @@ h2 { font-size: 17px; }
 }
 
 .link-btn:hover { text-decoration: underline; }
+
+
+/* ---------- gates ---------- */
+
+.gates { list-style: none; margin: 14px 0 0; padding: 0; }
+
+.gates li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.gates li:last-child { border-bottom: 0; }
+.gate-name { font-weight: 700; }
+.gate-sub { margin-top: 2px; color: var(--muted); font-size: 12px; }
+
+.pill.closed { background: var(--hover); color: var(--muted); }
+
+.gate-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.gate-notice.open { background: var(--free-soft); color: var(--free); }
+.gate-notice.closed { background: var(--hover); color: var(--muted); }
+.gate-notice .btn-small { flex: none; background: var(--surface); }

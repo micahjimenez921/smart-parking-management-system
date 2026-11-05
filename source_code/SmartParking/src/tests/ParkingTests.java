@@ -8,6 +8,8 @@ import fee.DailyCapFee;
 import fee.FeeStrategy;
 import fee.HourlyFee;
 import fee.PenaltyFee;
+import gate.GateController;
+import gate.GateState;
 import model.*;
 import payment.*;
 import service.ParkingLot;
@@ -36,6 +38,7 @@ public class ParkingTests {
         runSection("Fee calculation", ParkingTests::feeTests);
         runSection("Fee strategies", ParkingTests::feeStrategyTests);
         runSection("Lost ticket", ParkingTests::lostTicketTests);
+        runSection("Gates", ParkingTests::gateTests);
         runSection("Parking slots (encapsulation)", ParkingTests::slotTests);
         runSection("Polymorphism", ParkingTests::polymorphismTests);
         runSection("ParkingLot rules", ParkingTests::parkingLotTests);
@@ -161,6 +164,67 @@ public class ParkingTests {
         checkEquals("lost ticket receipt includes the penalty", 120.0, receipt.getAmount());
         checkEquals("change after a lost ticket payment", 380.0, cash.getChange(receipt.getAmount()));
         check("the slot is free after a lost ticket payment", ticket.getSlot().isAvailable());
+    }
+
+        private static void gateTests() throws Exception {
+        LocalDateTime start = LocalDateTime.of(2026, 1, 1, 8, 0, 0);
+
+        GateController gate = new GateController("TEST", 15);
+        checkEquals("a new gate is closed", GateState.CLOSED, gate.getState(start));
+
+        gate.open("ABC 123", start);
+        checkEquals("opening the gate for a vehicle", GateState.OPEN, gate.getState(start));
+        checkEquals("the gate remembers who it opened for", "ABC 123", gate.getOpenedFor(start));
+        checkEquals("seconds left right after opening", 15L, gate.getSecondsLeft(start));
+        checkEquals("seconds left after 6 seconds", 9L, gate.getSecondsLeft(start.plusSeconds(6)));
+        checkEquals("still open just before the time runs out", GateState.OPEN, gate.getState(start.plusSeconds(14)));
+        checkEquals("the gate closes by itself after 15 seconds", GateState.CLOSED, gate.getState(start.plusSeconds(15)));
+        check("a closed gate has no vehicle", gate.getOpenedFor(start.plusSeconds(20)) == null);
+
+        gate.open("XYZ 987", start);
+        gate.vehiclePassed();
+        checkEquals("the sensor reporting the vehicle closes the gate", GateState.CLOSED, gate.getState(start));
+
+        checkThrows("a gate must have an id", IllegalArgumentException.class, () -> new GateController(" ", 15));
+        checkThrows("a gate must close within 1 to 3600 seconds", IllegalArgumentException.class,
+                () -> new GateController("G", 0));
+        checkThrows("a gate opens for a specific vehicle", IllegalArgumentException.class, () -> gate.open(" "));
+
+        ParkingLot lot = DemoData.createEmptyLot();
+        checkEquals("the lot's gates start closed", GateState.CLOSED, lot.getEntryGate().getState());
+        checkEquals("the lot has an exit gate too", GateState.CLOSED, lot.getExitGate().getState());
+
+        Ticket ticket = lot.parkVehicle(new Car("GATE 111", "Gina"), "REGULAR");
+        checkEquals("parking a vehicle opens the entry gate for it", "GATE 111", lot.getEntryGate().getOpenedFor());
+        checkEquals("parking does not open the exit gate", GateState.CLOSED, lot.getExitGate().getState());
+
+        checkThrows("a failed payment is refused", PaymentFailedException.class,
+                () -> lot.checkout(ticket.getTicketId(), new CashPayment(1)));
+        checkEquals("a failed payment keeps the exit gate closed", GateState.CLOSED, lot.getExitGate().getState());
+
+        lot.checkout(ticket.getTicketId(), new CashPayment(500));
+        checkEquals("a successful payment opens the exit gate for that vehicle", "GATE 111", lot.getExitGate().getOpenedFor());
+
+        ParkingLot second = DemoData.createEmptyLot();
+        Ticket lostOne = second.parkVehicle(new Car("GATE 222", "Gus"), "REGULAR");
+        second.getEntryGate().close();
+        second.checkout(lostOne.getTicketId(), new CashPayment(500), true);
+        checkEquals("paying for a lost ticket opens the exit gate too", "GATE 222", second.getExitGate().getOpenedFor());
+
+        ParkingLot full = DemoData.createEmptyLot();
+        full.parkVehicle(new Car("FULL 1", "a"), "VIP");
+        full.parkVehicle(new Car("FULL 2", "b"), "VIP");
+        full.getEntryGate().close();
+        checkThrows("parking in a full slot type is refused", ParkingFullException.class,
+                () -> full.parkVehicle(new Car("FULL 3", "c"), "VIP"));
+        checkEquals("a refused vehicle does not open the entry gate", GateState.CLOSED, full.getEntryGate().getState());
+
+        ParkingLot restored = DemoData.createEmptyLot();
+        restored.restoreTicket(new Ticket("T-070", new Car("REST 1", "r"), restored.findSlot("R-01")));
+        checkEquals("restoring saved data does not open the gate", GateState.CLOSED, restored.getEntryGate().getState());
+
+        check("gates can be found by id, ignoring capitals", lot.findGate("exit") == lot.getExitGate());
+        check("an unknown gate id is not found", lot.findGate("side") == null);
     }
 
     private static Ticket ticketAged(Vehicle vehicle, ParkingSlot slot, int minutes) {

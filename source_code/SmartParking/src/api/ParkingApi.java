@@ -4,6 +4,8 @@ import com.sun.net.httpserver.HttpExchange;
 import exception.InvalidTicketException;
 import exception.ParkingFullException;
 import exception.PaymentFailedException;
+import gate.GateController;
+import gate.GateState;
 import model.ParkingSlot;
 import model.Receipt;
 import model.Ticket;
@@ -18,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -49,6 +52,8 @@ public class ParkingApi {
         server.addRoute("/api/ticket", this::handleTicket);
         server.addRoute("/api/park", this::handlePark);
         server.addRoute("/api/checkout", this::handleCheckout);
+        server.addRoute("/api/gates", exchange -> sendJson(exchange, 200, gatesJson()));
+        server.addRoute("/api/gate/close", this::handleGateClose);
     }
 
     /* ---------- reading data ---------- */
@@ -93,6 +98,21 @@ public class ParkingApi {
             sb.append("}");
         }
         return sb.append("]").toString();
+    }
+
+    private String gateJson(GateController gate, LocalDateTime now) {
+        boolean open = gate.getState(now) == GateState.OPEN;
+        return "{"
+                + "\"id\":" + Json.quote(gate.getGateId())
+                + ",\"state\":" + Json.quote(open ? "OPEN" : "CLOSED")
+                + ",\"plate\":" + (open ? Json.quote(gate.getOpenedFor(now)) : "null")
+                + ",\"secondsLeft\":" + gate.getSecondsLeft(now)
+                + "}";
+    }
+
+    private String gatesJson() {
+        LocalDateTime now = LocalDateTime.now();
+        return "[" + gateJson(lot.getEntryGate(), now) + "," + gateJson(lot.getExitGate(), now) + "]";
     }
 
     private String ticketJson(Ticket t) {
@@ -155,6 +175,21 @@ public class ParkingApi {
     }
 
     /* ---------- actions ---------- */
+
+    private void handleGateClose(HttpExchange exchange) throws IOException {
+        if (!"POST".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Use POST for this address.");
+            return;
+        }
+        Map<String, String> form = readForm(exchange);
+        GateController gate = lot.findGate(form.getOrDefault("gate", "").trim());
+        if (gate == null) {
+            sendError(exchange, 404, "Unknown gate.");
+            return;
+        }
+        gate.vehiclePassed();
+        sendJson(exchange, 200, gateJson(gate, LocalDateTime.now()));
+    }
 
     private void handleReceipts(HttpExchange exchange) throws IOException {
         if (!"GET".equals(exchange.getRequestMethod())) {

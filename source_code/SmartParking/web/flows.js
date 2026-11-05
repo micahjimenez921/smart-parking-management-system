@@ -114,6 +114,13 @@ function renderEntryResult() {
   plainRow(rows, "Rate", money(t.rate) + " / hour");
   plainRow(rows, "Entered", formatEntry(t.entryTime));
   card.appendChild(rows);
+  plainRow(rows, "Entered", formatEntry(t.entryTime));
+  card.appendChild(rows);
+
+  const gateBox = make("div", "gate-notice closed");
+  gateBox.id = "entry-gate-notice";
+  card.appendChild(gateBox);
+  if (typeof refreshGates === "function") refreshGates();
 
   const another = make("button", "btn", "Park another vehicle");
   another.addEventListener("click", () => {
@@ -289,6 +296,13 @@ function renderReceipt(card, receipt) {
   if (receipt.change > 0) plainRow(rows, "Change", money(receipt.change));
   plainRow(rows, "Paid at", formatEntry(receipt.time));
   card.appendChild(rows);
+  plainRow(rows, "Paid at", formatEntry(receipt.time));
+  card.appendChild(rows);
+
+  const gateBox = make("div", "gate-notice closed");
+  gateBox.id = "exit-gate-notice";
+  card.appendChild(gateBox);
+  if (typeof refreshGates === "function") refreshGates();
 
   const next = make("button", "btn", "Check out another vehicle");
   next.addEventListener("click", () => {

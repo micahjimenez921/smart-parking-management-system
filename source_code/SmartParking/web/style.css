@@ -844,3 +844,34 @@ h2 { font-size: 17px; }
 .gate-notice.open { background: var(--free-soft); color: var(--free); }
 .gate-notice.closed { background: var(--hover); color: var(--muted); }
 .gate-notice .btn-small { flex: none; background: var(--surface); }
+
+
+/* ---------- printing ---------- */
+
+.print-slip { display: none; }
+
+@media print {
+  @page { margin: 10mm; }
+
+  body { background: #ffffff; }
+  .app { display: none !important; }
+
+  .print-slip {
+    display: block;
+    max-width: 80mm;
+    margin: 0 auto;
+    color: #000000;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 12pt;
+  }
+
+  .slip-brand { font-size: 20pt; font-weight: 800; text-align: center; }
+  .slip-title { margin-top: 2mm; text-align: center; font-size: 12pt; letter-spacing: 0.08em; text-transform: uppercase; }
+  .slip-rule { margin: 4mm 0; border-top: 1px dashed #000000; }
+
+  .slip-row { display: flex; justify-content: space-between; gap: 6mm; padding: 1.2mm 0; }
+  .slip-row span:last-child { text-align: right; }
+  .slip-row.strong { font-size: 14pt; font-weight: 800; }
+
+  .slip-note { margin-top: 2mm; text-align: center; font-size: 10pt; }
+}

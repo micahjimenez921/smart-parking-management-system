@@ -122,6 +122,10 @@ function renderEntryResult() {
   card.appendChild(gateBox);
   if (typeof refreshGates === "function") refreshGates();
 
+  const printTicketButton = make("button", "btn-ghost", "Print ticket");
+  printTicketButton.addEventListener("click", () => printTicket(t));
+  card.appendChild(printTicketButton);
+
   const another = make("button", "btn", "Park another vehicle");
   another.addEventListener("click", () => {
     entryState.ticket = null;
@@ -303,6 +307,10 @@ function renderReceipt(card, receipt) {
   gateBox.id = "exit-gate-notice";
   card.appendChild(gateBox);
   if (typeof refreshGates === "function") refreshGates();
+
+  const printReceiptButton = make("button", "btn-ghost", "Print receipt");
+  printReceiptButton.addEventListener("click", () => printReceipt(receipt));
+  card.appendChild(printReceiptButton);
 
   const next = make("button", "btn", "Check out another vehicle");
   next.addEventListener("click", () => {

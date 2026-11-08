@@ -12,6 +12,10 @@ public class DailyCapFee implements FeeStrategy {
         this.capHours = capHours;
     }
 
+    public int getCapHours() {
+        return capHours;
+    }
+
     @Override
     public double calculateFee(Ticket ticket) {
         long hours = ticket.getHoursParked();

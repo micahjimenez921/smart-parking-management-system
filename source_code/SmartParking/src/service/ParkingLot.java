@@ -3,6 +3,7 @@ package service;
 import exception.InvalidTicketException;
 import exception.ParkingFullException;
 import exception.PaymentFailedException;
+import fee.DailyCapFee;
 import fee.FeeStrategy;
 import fee.HourlyFee;
 import fee.PenaltyFee;
@@ -16,6 +17,7 @@ import payment.PaymentMethod;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -91,6 +93,66 @@ public class ParkingLot {
 
     public double calculateLostTicketFee(Ticket ticket) {
         return new PenaltyFee(feeStrategy, lostTicketPenalty).calculateFee(ticket);
+    }
+
+    /** The hourly rate of each slot type, in the order the types first appear. */
+    public Map<String, Double> getRates() {
+        Map<String, Double> rates = new LinkedHashMap<>();
+        for (ParkingSlot s : slots) {
+            rates.putIfAbsent(s.getSlotType(), s.getHourlyRate());
+        }
+        return rates;
+    }
+
+    /** Changes the hourly rate of every slot of one type. */
+    public void setRate(String slotType, double rate) {
+        ParkingSlot.validateRate(rate);
+        boolean found = false;
+        for (ParkingSlot s : slots) {
+            if (s.getSlotType().equals(slotType)) {
+                s.setHourlyRate(rate);
+                found = true;
+            }
+        }
+        if (!found) {
+            throw new IllegalArgumentException("There are no " + slotType + " slots.");
+        }
+    }
+
+    public int getDailyCapHours() {
+        return (feeStrategy instanceof DailyCapFee) ? ((DailyCapFee) feeStrategy).getCapHours() : 0;
+    }
+
+    /** 0 means no daily cap (plain hourly pricing). 1 to 24 sets the cap in hours. */
+    public void setDailyCapHours(int hours) {
+        if (hours == 0) {
+            feeStrategy = new HourlyFee();
+        } else {
+            feeStrategy = new DailyCapFee(hours);
+        }
+    }
+
+    /** Checks every value first, so one bad value changes nothing. */
+    public void updatePricing(Map<String, Double> newRates, int capHours, double penalty) {
+        Map<String, Double> current = getRates();
+        for (Map.Entry<String, Double> entry : newRates.entrySet()) {
+            if (!current.containsKey(entry.getKey())) {
+                throw new IllegalArgumentException("There are no " + entry.getKey() + " slots.");
+            }
+            ParkingSlot.validateRate(entry.getValue());
+        }
+        if (capHours < 0 || capHours > 24) {
+            throw new IllegalArgumentException("The daily cap must be 0 (no cap) or 1 to 24 hours.");
+        }
+        if (Double.isNaN(penalty) || Double.isInfinite(penalty) || penalty < 0) {
+            throw new IllegalArgumentException("The penalty must be zero or more.");
+        }
+
+        for (Map.Entry<String, Double> entry : newRates.entrySet()) {
+            setRate(entry.getKey(), entry.getValue());
+        }
+        setDailyCapHours(capHours);
+        setLostTicketPenalty(penalty);
     }
 
     public GateController getEntryGate() { return entryGate; }

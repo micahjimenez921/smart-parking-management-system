@@ -16,6 +16,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class FileParkingRepository implements ParkingRepository {
     private static final String HEADER = "SMARTPARK-DATA 1";
@@ -36,6 +37,12 @@ public class FileParkingRepository implements ParkingRepository {
         List<String> lines = new ArrayList<>();
         lines.add(HEADER);
         lines.add(join("COUNTER", String.valueOf(lot.getTicketCounter())));
+
+        for (Map.Entry<String, Double> rate : lot.getRates().entrySet()) {
+            lines.add(join("RATE", rate.getKey(), String.valueOf(rate.getValue())));
+        }
+        lines.add(join("CAP", String.valueOf(lot.getDailyCapHours())));
+        lines.add(join("PENALTY", String.valueOf(lot.getLostTicketPenalty())));
 
         for (Ticket t : lot.getActiveTickets()) {
             lines.add(join("TICKET",
@@ -91,6 +98,15 @@ public class FileParkingRepository implements ParkingRepository {
                 switch (p[0]) {
                     case "COUNTER":
                         lot.setTicketCounter(Integer.parseInt(p[1]));
+                        break;
+                    case "RATE":
+                        lot.setRate(p[1], Double.parseDouble(p[2]));
+                        break;
+                    case "CAP":
+                        lot.setDailyCapHours(Integer.parseInt(p[1]));
+                        break;
+                    case "PENALTY":
+                        lot.setLostTicketPenalty(Double.parseDouble(p[1]));
                         break;
                     case "TICKET": {
                         Vehicle vehicle = VehicleFactory.create(p[2], p[3], p[4]);

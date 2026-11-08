@@ -22,6 +22,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Plain Java tests (no libraries). Run this class and read the PASS / FAIL lines.
@@ -39,6 +41,7 @@ public class ParkingTests {
         runSection("Fee strategies", ParkingTests::feeStrategyTests);
         runSection("Lost ticket", ParkingTests::lostTicketTests);
         runSection("Gates", ParkingTests::gateTests);
+        runSection("Settings", ParkingTests::settingsTests);
         runSection("Parking slots (encapsulation)", ParkingTests::slotTests);
         runSection("Polymorphism", ParkingTests::polymorphismTests);
         runSection("ParkingLot rules", ParkingTests::parkingLotTests);
@@ -227,6 +230,108 @@ public class ParkingTests {
         check("an unknown gate id is not found", lot.findGate("side") == null);
     }
 
+        private static void settingsTests() throws Exception {
+        ParkingSlot regular = new RegularSlot("R-99");
+        checkEquals("a Regular slot starts at its default rate", 20.0, regular.getHourlyRate());
+        checkEquals("each slot type knows its own default rate", 15.0, new HandicappedSlot("H-99").getDefaultRate());
+        checkEquals("the VIP default rate", 50.0, new VIPSlot("V-99").getDefaultRate());
+        checkEquals("a slot can be created with its own rate", 35.0, new RegularSlot("R-98", 35).getHourlyRate());
+
+        regular.setHourlyRate(25);
+        checkEquals("a slot's rate can be changed", 25.0, regular.getHourlyRate());
+        checkEquals("changing a rate does not change the default", 20.0, regular.getDefaultRate());
+        checkThrows("a rate of 0 is rejected", IllegalArgumentException.class, () -> regular.setHourlyRate(0));
+        checkThrows("a negative rate is rejected", IllegalArgumentException.class, () -> regular.setHourlyRate(-5));
+        checkThrows("a rate above the maximum is rejected", IllegalArgumentException.class,
+                () -> regular.setHourlyRate(10_001));
+        checkThrows("a rate that is not a number is rejected", IllegalArgumentException.class,
+                () -> regular.setHourlyRate(Double.NaN));
+        checkEquals("a rejected rate leaves the old rate in place", 25.0, regular.getHourlyRate());
+
+        ParkingLot lot = DemoData.createEmptyLot();
+        checkEquals("the lot lists three slot types", 3, lot.getRates().size());
+        checkEquals("the Regular rate in a new lot", 20.0, lot.getRates().get("REGULAR"));
+
+        lot.setRate("REGULAR", 30);
+        checkEquals("setting a type's rate changes its first slot", 30.0, lot.findSlot("R-01").getHourlyRate());
+        checkEquals("setting a type's rate changes its last slot", 30.0, lot.findSlot("R-04").getHourlyRate());
+        checkEquals("other slot types are not affected", 15.0, lot.findSlot("H-01").getHourlyRate());
+        checkThrows("a slot type that does not exist is rejected", IllegalArgumentException.class,
+                () -> lot.setRate("BOAT", 10));
+
+        checkEquals("a new lot has no daily cap", 0, lot.getDailyCapHours());
+        lot.setDailyCapHours(8);
+        checkEquals("the daily cap can be set", 8, lot.getDailyCapHours());
+        check("the fee rule mentions the cap", lot.getFeeStrategy().getDescription().contains("8 hours"));
+        lot.setDailyCapHours(0);
+        checkEquals("a cap of 0 turns the cap off", 0, lot.getDailyCapHours());
+        checkThrows("a cap above 24 hours is rejected", IllegalArgumentException.class, () -> lot.setDailyCapHours(25));
+        checkThrows("a negative cap is rejected", IllegalArgumentException.class, () -> lot.setDailyCapHours(-1));
+
+        Ticket twoHours = ticketAged(new Car("SET 1", "Sam"), lot.findSlot("R-01"), 120);
+        checkEquals("fees use the new rate: 2 hours x 30", 60.0, lot.calculateFee(twoHours));
+
+        Map<String, Double> bad = new LinkedHashMap<>();
+        bad.put("REGULAR", 40.0);
+        bad.put("VIP", -5.0);
+        checkThrows("one bad rate rejects the whole update", IllegalArgumentException.class,
+                () -> lot.updatePricing(bad, 6, 150));
+        checkEquals("a rejected update changes no rate", 30.0, lot.findSlot("R-01").getHourlyRate());
+        checkEquals("a rejected update changes no cap", 0, lot.getDailyCapHours());
+        checkEquals("a rejected update changes no penalty", 100.0, lot.getLostTicketPenalty());
+
+        Map<String, Double> good = new LinkedHashMap<>();
+        good.put("REGULAR", 40.0);
+        checkThrows("a bad cap rejects the whole update", IllegalArgumentException.class,
+                () -> lot.updatePricing(good, 30, 150));
+        checkThrows("a bad penalty rejects the whole update", IllegalArgumentException.class,
+                () -> lot.updatePricing(good, 6, -1));
+        Map<String, Double> unknown = new LinkedHashMap<>();
+        unknown.put("BOAT", 10.0);
+        checkThrows("an unknown slot type rejects the whole update", IllegalArgumentException.class,
+                () -> lot.updatePricing(unknown, 6, 150));
+        checkEquals("none of those rejected updates changed the rate", 30.0, lot.findSlot("R-01").getHourlyRate());
+
+        Map<String, Double> update = new LinkedHashMap<>();
+        update.put("REGULAR", 40.0);
+        update.put("VIP", 60.0);
+        lot.updatePricing(update, 6, 150);
+        checkEquals("a good update changes the Regular rate", 40.0, lot.getRates().get("REGULAR"));
+        checkEquals("a good update changes the VIP rate", 60.0, lot.getRates().get("VIP"));
+        checkEquals("a type left out of the update keeps its rate", 15.0, lot.getRates().get("HANDICAPPED"));
+        checkEquals("a good update changes the cap", 6, lot.getDailyCapHours());
+        checkEquals("a good update changes the penalty", 150.0, lot.getLostTicketPenalty());
+
+        Ticket later = ticketAged(new Car("SET 2", "Sue"), lot.findSlot("R-01"), 120);
+        checkEquals("the lost ticket fee uses the new rate and penalty: 80 + 150", 230.0,
+                lot.calculateLostTicketFee(later));
+
+        Path folder = Files.createTempDirectory("smartpark-settings");
+        FileParkingRepository repository = new FileParkingRepository(folder.resolve("data.txt"));
+        repository.save(lot);
+        ParkingLot restored = DemoData.createEmptyLot();
+        repository.load(restored);
+        checkEquals("saved Regular rate is restored", 40.0, restored.getRates().get("REGULAR"));
+        checkEquals("saved VIP rate is restored", 60.0, restored.getRates().get("VIP"));
+        checkEquals("an unchanged rate is restored", 15.0, restored.getRates().get("HANDICAPPED"));
+        checkEquals("the saved cap is restored", 6, restored.getDailyCapHours());
+        checkEquals("the saved penalty is restored", 150.0, restored.getLostTicketPenalty());
+
+        Path oldFile = folder.resolve("old.txt");
+        Files.writeString(oldFile, "SMARTPARK-DATA 1\nCOUNTER\t3\n"
+                + "TICKET\tT-001\tCAR\tOLD 1\tOld Timer\tR-01\t2026-01-01T10:00\n");
+        ParkingLot legacy = DemoData.createEmptyLot();
+        new FileParkingRepository(oldFile).load(legacy);
+        checkEquals("a file saved before settings existed still loads its tickets", 1, legacy.getActiveTickets().size());
+        checkEquals("...and keeps the default rate", 20.0, legacy.getRates().get("REGULAR"));
+        checkEquals("...and the default penalty", 100.0, legacy.getLostTicketPenalty());
+
+        Path oddFile = folder.resolve("odd.txt");
+        Files.writeString(oddFile, "SMARTPARK-DATA 1\nRATE\tBOAT\t10\nRATE\tVIP\t75\n");
+        ParkingLot odd = DemoData.createEmptyLot();
+        new FileParkingRepository(oddFile).load(odd);
+        checkEquals("a saved rate for an unknown type is skipped", 75.0, odd.getRates().get("VIP"));
+    }
     private static Ticket ticketAged(Vehicle vehicle, ParkingSlot slot, int minutes) {
         return new Ticket("TEST", vehicle, slot, LocalDateTime.now().minusMinutes(minutes));
     }

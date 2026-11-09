@@ -2,6 +2,7 @@ package storage;
 
 import model.ParkingSlot;
 import model.Receipt;
+import model.SlotFactory;
 import model.Ticket;
 import model.Vehicle;
 import model.VehicleFactory;
@@ -37,6 +38,10 @@ public class FileParkingRepository implements ParkingRepository {
         List<String> lines = new ArrayList<>();
         lines.add(HEADER);
         lines.add(join("COUNTER", String.valueOf(lot.getTicketCounter())));
+
+        for (ParkingSlot slot : lot.getSlots()) {
+            lines.add(join("SLOT", slot.getSlotId(), slot.getSlotType()));
+        }
 
         for (Map.Entry<String, Double> rate : lot.getRates().entrySet()) {
             lines.add(join("RATE", rate.getKey(), String.valueOf(rate.getValue())));
@@ -88,6 +93,7 @@ public class FileParkingRepository implements ParkingRepository {
         int tickets = 0;
         int receipts = 0;
         int skipped = 0;
+        boolean slotsReplaced = false;
 
         for (int i = 1; i < lines.size(); i++) {
             String line = lines.get(i);
@@ -98,6 +104,16 @@ public class FileParkingRepository implements ParkingRepository {
                 switch (p[0]) {
                     case "COUNTER":
                         lot.setTicketCounter(Integer.parseInt(p[1]));
+                        break;
+                    case "SLOT":
+                        if (!slotsReplaced) {
+                            lot.clearSlots();
+                            slotsReplaced = true;
+                        }
+                        if (lot.findSlot(p[1]) != null) {
+                            throw new IllegalArgumentException("slot " + p[1] + " appears twice");
+                        }
+                        lot.addSlot(SlotFactory.create(p[2], p[1]));
                         break;
                     case "RATE":
                         lot.setRate(p[1], Double.parseDouble(p[2]));

@@ -9,6 +9,7 @@ import fee.HourlyFee;
 import fee.PenaltyFee;
 import gate.GateController;
 import model.ParkingSlot;
+import model.SlotFactory;
 import model.Receipt;
 import model.Ticket;
 import model.Vehicle;
@@ -22,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 public class ParkingLot {
+    public static final int MAX_SLOTS = 200;
+
     private String name;
     private List<ParkingSlot> slots = new ArrayList<>();
     private Map<String, Ticket> activeTickets = new HashMap<>();
@@ -44,6 +47,54 @@ public class ParkingLot {
 
     public void addSlot(ParkingSlot slot) {
         slots.add(slot);
+    }
+
+    /** Adds a new slot of the given type, at the type's current rate, with the next free id. */
+    public ParkingSlot addSlotOfType(String slotType) {
+        String prefix = SlotFactory.idPrefix(slotType);
+        if (slots.size() >= MAX_SLOTS) {
+            throw new IllegalArgumentException("The lot cannot have more than " + MAX_SLOTS + " slots.");
+        }
+
+        int highest = 0;
+        for (ParkingSlot s : slots) {
+            String id = s.getSlotId();
+            if (id.startsWith(prefix + "-")) {
+                try {
+                    highest = Math.max(highest, Integer.parseInt(id.substring(prefix.length() + 1)));
+                } catch (NumberFormatException e) {
+                    /* not one of the numbered slots */
+                }
+            }
+        }
+        String newId = String.format("%s-%02d", prefix, highest + 1);
+
+        Double rate = getRates().get(slotType);
+        ParkingSlot slot = (rate == null)
+                ? SlotFactory.create(slotType, newId)
+                : SlotFactory.create(slotType, newId, rate);
+        slots.add(slot);
+        return slot;
+    }
+
+    /** Removes a free slot. A slot with a vehicle in it cannot be removed. */
+    public void removeSlot(String slotId) {
+        ParkingSlot slot = findSlot(slotId);
+        if (slot == null) {
+            throw new IllegalArgumentException("Slot " + slotId + " not found.");
+        }
+        if (!slot.isAvailable()) {
+            throw new IllegalStateException("Slot " + slotId + " has a vehicle in it and cannot be removed.");
+        }
+        slots.remove(slot);
+    }
+
+    /** Used when loading saved data: the saved slots replace the default ones. */
+    public void clearSlots() {
+        if (!activeTickets.isEmpty()) {
+            throw new IllegalStateException("Slots cannot be cleared while vehicles are parked.");
+        }
+        slots.clear();
     }
 
     public int getAvailableCount() {

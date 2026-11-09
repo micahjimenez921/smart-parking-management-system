@@ -42,6 +42,7 @@ public class ParkingTests {
         runSection("Lost ticket", ParkingTests::lostTicketTests);
         runSection("Gates", ParkingTests::gateTests);
         runSection("Settings", ParkingTests::settingsTests);
+        runSection("Slot management", ParkingTests::slotManagementTests);
         runSection("Parking slots (encapsulation)", ParkingTests::slotTests);
         runSection("Polymorphism", ParkingTests::polymorphismTests);
         runSection("ParkingLot rules", ParkingTests::parkingLotTests);
@@ -332,6 +333,89 @@ public class ParkingTests {
         new FileParkingRepository(oddFile).load(odd);
         checkEquals("a saved rate for an unknown type is skipped", 75.0, odd.getRates().get("VIP"));
     }
+
+        private static void slotManagementTests() throws Exception {
+        check("SlotFactory builds a Regular slot", SlotFactory.create("REGULAR", "R-50") instanceof RegularSlot);
+        check("SlotFactory builds a Handicapped slot", SlotFactory.create("HANDICAPPED", "H-50") instanceof HandicappedSlot);
+        check("SlotFactory builds a VIP slot", SlotFactory.create("VIP", "V-50") instanceof VIPSlot);
+        checkEquals("SlotFactory can set the rate", 33.0, SlotFactory.create("VIP", "V-50", 33).getHourlyRate());
+        checkEquals("slot ids start with the type's letter", "H", SlotFactory.idPrefix("HANDICAPPED"));
+        checkThrows("SlotFactory rejects an unknown type", IllegalArgumentException.class,
+                () -> SlotFactory.create("BOAT", "B-01"));
+
+        ParkingLot lot = DemoData.createEmptyLot();
+        ParkingSlot first = lot.addSlotOfType("REGULAR");
+        checkEquals("the next Regular slot is R-05", "R-05", first.getSlotId());
+        checkEquals("a new slot is a Regular slot", "REGULAR", first.getSlotType());
+        checkEquals("the lot now has 9 slots", 9, lot.getSlots().size());
+        checkEquals("the next Handicapped slot is H-03", "H-03", lot.addSlotOfType("HANDICAPPED").getSlotId());
+        checkEquals("the next VIP slot is V-03", "V-03", lot.addSlotOfType("VIP").getSlotId());
+        check("a new slot can be found", lot.findSlot("R-05") != null);
+        check("a new slot is free", lot.findSlot("R-05").isAvailable());
+
+        lot.setRate("REGULAR", 45);
+        checkEquals("a new slot gets the type's current rate", 45.0, lot.addSlotOfType("REGULAR").getHourlyRate());
+        checkEquals("numbering continues: R-06", "R-06", lot.findSlot("R-06").getSlotId());
+
+        checkThrows("adding an unknown type is refused", IllegalArgumentException.class,
+                () -> lot.addSlotOfType("BOAT"));
+
+        Ticket ticket = lot.parkVehicle(new Car("SLOT 1", "Sid"), "VIP");
+        String occupiedId = ticket.getSlot().getSlotId();
+        checkThrows("an occupied slot cannot be removed", IllegalStateException.class,
+                () -> lot.removeSlot(occupiedId));
+        check("the occupied slot is still there", lot.findSlot(occupiedId) != null);
+        checkThrows("an unknown slot cannot be removed", IllegalArgumentException.class,
+                () -> lot.removeSlot("X-99"));
+
+        lot.removeSlot("R-02");
+        check("a free slot can be removed", lot.findSlot("R-02") == null);
+        checkEquals("numbering does not reuse a lower number: R-07", "R-07", lot.addSlotOfType("REGULAR").getSlotId());
+
+        ParkingLot onlyRegular = new ParkingLot("Small");
+        onlyRegular.addSlot(new RegularSlot("R-01"));
+        checkEquals("a type with no slots starts at its default rate", 50.0, onlyRegular.addSlotOfType("VIP").getHourlyRate());
+        checkEquals("...and gets the first number", "V-01", onlyRegular.findSlot("V-01").getSlotId());
+
+        ParkingLot big = new ParkingLot("Big");
+        for (int i = 0; i < ParkingLot.MAX_SLOTS; i++) {
+            big.addSlot(new RegularSlot("X-" + i));
+        }
+        checkThrows("the lot cannot grow past its maximum size", IllegalArgumentException.class,
+                () -> big.addSlotOfType("REGULAR"));
+
+        // saving and loading the slot list
+        Path folder = Files.createTempDirectory("smartpark-slots");
+        FileParkingRepository repository = new FileParkingRepository(folder.resolve("data.txt"));
+
+        ParkingLot saved = DemoData.createEmptyLot();
+        saved.addSlotOfType("VIP");
+        saved.removeSlot("H-02");
+        Ticket inNew = saved.parkVehicle(new Truck("SAVE 1", "Sol"), "VIP");
+        repository.save(saved);
+
+        ParkingLot back = DemoData.createEmptyLot();
+        repository.load(back);
+        checkEquals("the saved slot count is restored", saved.getSlots().size(), back.getSlots().size());
+        check("a removed slot stays removed", back.findSlot("H-02") == null);
+        check("an added slot is restored", back.findSlot("V-03") != null);
+        checkEquals("a parked vehicle is restored into its slot", false, back.findSlot(inNew.getSlot().getSlotId()).isAvailable());
+
+        // a file with the same slot twice keeps only the first
+        Path dupFile = folder.resolve("dup.txt");
+        Files.writeString(dupFile, "SMARTPARK-DATA 1\nSLOT\tR-01\tREGULAR\nSLOT\tR-01\tREGULAR\nSLOT\tV-01\tVIP\n");
+        ParkingLot dup = DemoData.createEmptyLot();
+        new FileParkingRepository(dupFile).load(dup);
+        checkEquals("a repeated slot in the file is skipped", 2, dup.getSlots().size());
+
+        // an older file without any slot records keeps the default slots
+        Path oldFile = folder.resolve("older.txt");
+        Files.writeString(oldFile, "SMARTPARK-DATA 1\nCOUNTER\t1\n");
+        ParkingLot older = DemoData.createEmptyLot();
+        new FileParkingRepository(oldFile).load(older);
+        checkEquals("a file with no slot records keeps the default 8 slots", 8, older.getSlots().size());
+    }
+
     private static Ticket ticketAged(Vehicle vehicle, ParkingSlot slot, int minutes) {
         return new Ticket("TEST", vehicle, slot, LocalDateTime.now().minusMinutes(minutes));
     }

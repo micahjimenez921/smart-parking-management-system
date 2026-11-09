@@ -875,3 +875,29 @@ h2 { font-size: 17px; }
 
   .slip-note { margin-top: 2mm; text-align: center; font-size: 10pt; }
 }
+
+
+/* ---------- settings page ---------- */
+
+.select {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  outline: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.scroll-list { max-height: 420px; overflow-y: auto; }
+
+.btn-small.danger { border-color: var(--busy); color: var(--busy); }
+.btn-small.danger:hover { background: var(--busy-soft); }
+.btn-small:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-small:disabled:hover { background: transparent; }

@@ -24,6 +24,8 @@ public class SettingsApi {
 
     public void register(WebServer server) {
         server.addRoute("/api/settings", this::handleSettings);
+        server.addRoute("/api/slots/add", this::handleAddSlot);
+        server.addRoute("/api/slots/remove", this::handleRemoveSlot);
     }
 
     private String settingsJson() {
@@ -77,6 +79,43 @@ public class SettingsApi {
             sendJson(exchange, 200, settingsJson());
         } catch (IllegalArgumentException e) {
             sendError(exchange, 400, e.getMessage());
+        }
+    }
+
+    private void handleAddSlot(HttpExchange exchange) throws IOException {
+        if (!"POST".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Use POST for this address.");
+            return;
+        }
+        Map<String, String> form = readForm(exchange);
+        try {
+            ParkingSlot slot = lot.addSlotOfType(form.getOrDefault("type", ""));
+            persist();
+            sendJson(exchange, 200, "{"
+                    + "\"id\":" + Json.quote(slot.getSlotId())
+                    + ",\"type\":" + Json.quote(slot.getSlotType())
+                    + ",\"rate\":" + slot.getHourlyRate()
+                    + "}");
+        } catch (IllegalArgumentException e) {
+            sendError(exchange, 400, e.getMessage());
+        }
+    }
+
+    private void handleRemoveSlot(HttpExchange exchange) throws IOException {
+        if (!"POST".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Use POST for this address.");
+            return;
+        }
+        Map<String, String> form = readForm(exchange);
+        String id = form.getOrDefault("id", "").trim();
+        try {
+            lot.removeSlot(id);
+            persist();
+            sendJson(exchange, 200, "{\"removed\":" + Json.quote(id) + "}");
+        } catch (IllegalArgumentException e) {
+            sendError(exchange, 404, e.getMessage());
+        } catch (IllegalStateException e) {
+            sendError(exchange, 409, e.getMessage());
         }
     }
 

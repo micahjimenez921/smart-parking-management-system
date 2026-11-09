@@ -35,7 +35,11 @@
         </button>
         <button class="nav-item" data-view="reports">
           <svg class="ico" viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-          <span>Reports</span>
+            <span>Reports</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <svg class="ico" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          <span>Settings</span>
         </button>
       </nav>
 
@@ -361,6 +365,65 @@
 
           <p class="muted note">Sample payment history is included so the charts have data to show. New payments you take are added to it.</p>
         </section>
+      
+                <section class="view" id="view-settings">
+          <div class="page-head">
+            <h1>Settings</h1>
+            <p class="muted">Prices, the daily cap, the lost ticket penalty, and the parking slots</p>
+          </div>
+
+          <div class="grid-2 flow-grid">
+            <div class="card">
+              <h2>Pricing</h2>
+
+              <form id="settings-form" class="form" autocomplete="off" novalidate>
+                <div id="rate-fields"></div>
+
+                <label class="field">
+                  <span>Daily cap (hours, 0 means no cap)</span>
+                  <input id="set-cap" type="text" inputmode="numeric">
+                </label>
+
+                <label class="field">
+                  <span>Lost ticket penalty</span>
+                  <input id="set-penalty" type="text" inputmode="decimal">
+                </label>
+
+                <p class="muted note" id="set-rule"></p>
+                <div class="form-msg" id="settings-msg" hidden></div>
+                <button class="btn" type="submit">Save settings</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <h2>Parking slots</h2>
+              <p class="muted note">Add a slot, or remove one that is free.</p>
+
+              <form id="slot-form" class="form" autocomplete="off" novalidate>
+                <div class="inline">
+                  <select id="slot-type" class="select">
+                    <option value="REGULAR">Regular</option>
+                    <option value="HANDICAPPED">Handicapped</option>
+                    <option value="VIP">VIP</option>
+                  </select>
+                  <button class="btn-inline" type="submit">Add slot</button>
+                </div>
+              </form>
+
+              <div class="form-msg" id="slots-msg" hidden></div>
+
+              <div class="table-wrap scroll-list">
+                <table class="table">
+                  <thead>
+                    <tr><th>Slot</th><th>Type</th><th>Status</th><th></th></tr>
+                  </thead>
+                  <tbody id="slots-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
     </div>
   </div>
@@ -372,5 +435,6 @@
     <script src="pages.js"></script>
     <script src="gates.js"></script>
     <script src="print.js"></script>
+    <script src="settings.js"></script>
 </body>
 </html>

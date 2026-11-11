@@ -14,6 +14,7 @@ import java.nio.file.Path;
 public class WebServer {
     private final HttpServer server;
     private final Path webRoot;
+    private AccessGuard guard;
 
     public WebServer(int port, Path webRoot) throws IOException {
         this.webRoot = webRoot.toAbsolutePath().normalize();
@@ -21,12 +22,25 @@ public class WebServer {
         this.server.createContext("/", this::serveFile);
     }
 
+    /** Once a guard is set, every route added after it needs a signed-in user the rules allow. */
+    public void setGuard(AccessGuard guard) {
+        this.guard = guard;
+    }
+
     public void addRoute(String path, HttpHandler handler) {
-        server.createContext(path, handler);
+        server.createContext(path, guard == null ? handler : guard.protect(handler));
+    }
+
+    public int getPort() {
+        return server.getAddress().getPort();
     }
 
     public void start() {
         server.start();
+    }
+
+    public void stop() {
+        server.stop(0);
     }
 
     private void serveFile(HttpExchange exchange) throws IOException {

@@ -1,0 +1,22 @@
+/* Sign-in page. The colors, fields, and buttons come from style.css. */
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 32px;
+}
+
+.login-card .brand { padding: 0 0 22px; }
+
+.login-lead { margin-top: 6px; }
+
+.login-card .form { margin-top: 22px; }
+
+.login-card .form-msg { margin-bottom: 4px; }

@@ -1,6 +1,7 @@
 /* Settings page: pricing form and the list of parking slots. Uses helpers from app.js, flows.js and pages.js. */
 
 async function loadSettingsPage() {
+  if (!canUse("SETTINGS")) return;
   try {
     const results = await Promise.all([getJson("/api/settings"), getJson("/api/slots")]);
     renderSettings(results[0]);

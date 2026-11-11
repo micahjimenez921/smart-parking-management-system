@@ -1,0 +1,34 @@
+/* Signed-in user: hiding the page until we know who it is, the log out button, and the My account page. */
+
+/* nothing of the app shows until the server has said who is signed in */
+body.pending .app { visibility: hidden; }
+
+.user .hello b { font-weight: 700; }
+
+#view-account .rows { margin-top: 14px; }
+
+#view-account .card > .btn-ghost { margin-top: 18px; }
+
+.menu-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.menu-list li {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#view-account .row .k {
+  margin-right: 16px;
+  white-space: nowrap;
+}

@@ -6,7 +6,7 @@ const state = {
   selectedId: null
 };
 
-const VIEWS = ["dashboard", "entry", "exit", "tickets", "reports", "settings"];
+const VIEWS = ["dashboard", "entry", "exit", "tickets", "reports", "settings", "account"];
 
 const TYPE_LABEL = { REGULAR: "Regular", HANDICAPPED: "Handicapped", VIP: "VIP" };
 const TYPE_CLASS = { REGULAR: "type-regular", HANDICAPPED: "type-handicapped", VIP: "type-vip" };
@@ -236,6 +236,7 @@ function selectSlot(id) {
 }
 
 async function refresh() {
+  if (!canUse("DASHBOARD")) return;
   try {
     const results = await Promise.all([getJson("/api/stats"), getJson("/api/slots")]);
     state.slots = results[1];
@@ -256,7 +257,7 @@ async function refresh() {
 }
 
 function showView(name) {
-  if (!VIEWS.includes(name)) name = "dashboard";
+  if (!VIEWS.includes(name) || !canSeeView(name)) name = firstAllowedView();
 
   for (const view of VIEWS) {
     document.getElementById("view-" + view).classList.toggle("active", view === name);

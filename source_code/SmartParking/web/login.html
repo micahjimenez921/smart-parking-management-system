@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in - SmartPark</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232563eb'/%3E%3Ctext x='16' y='23' font-family='Arial' font-size='20' font-weight='bold' text-anchor='middle' fill='white'%3EP%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <main class="login-page">
+    <div class="card login-card">
+      <div class="brand">
+        <span class="brand-mark">P</span>
+        <span class="brand-name">SmartPark</span>
+      </div>
+
+      <h1>Sign in</h1>
+      <p class="muted login-lead">Use your SmartPark account to continue.</p>
+
+      <form id="login-form" class="form" novalidate>
+        <label class="field">
+          <span>Username</span>
+          <input id="login-username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus>
+        </label>
+
+        <label class="field">
+          <span>Password</span>
+          <input id="login-password" type="password" autocomplete="current-password">
+        </label>
+
+        <div class="form-msg" id="login-msg" role="alert" hidden></div>
+        <button class="btn" id="login-submit" type="submit">Sign in</button>
+      </form>
+
+    </div>
+  </main>
+
+  <script src="login.js"></script>
+</body>
+</html>

@@ -4,6 +4,7 @@ const gateStatus = { ENTRY: null, EXIT: null };
 const GATE_NAME = { ENTRY: "Entry gate", EXIT: "Exit gate" };
 
 async function refreshGates() {
+  if (!canUse("DASHBOARD")) return;
   try {
     const gates = await getJson("/api/gates");
     for (const gate of gates) {

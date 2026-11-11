@@ -219,6 +219,7 @@ async function loadReportsPage() {
 /* ---------- start ---------- */
 
 function loadCurrentPage() {
+  if (!canUse("TICKETS")) return;
   const view = currentView();
   if (view === "tickets") loadTicketsPage();
   if (view === "reports") loadReportsPage();

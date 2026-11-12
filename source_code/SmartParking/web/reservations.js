@@ -28,6 +28,11 @@ function timeText(iso) {
 }
 
 function renderReservations() {
+  renderReservationsCard();
+  if (typeof applyDriverSearch === "function") applyDriverSearch(false);
+}
+
+function renderReservationsCard() {
   const data = reserveState.data;
   const card = document.getElementById("driver-reserve");
   card.innerHTML = "";

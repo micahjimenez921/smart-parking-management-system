@@ -468,12 +468,14 @@
           </div>
 
           <div class="grid-2 flow-grid">
-            <div class="card" id="driver-parked"></div>
+            <div class="driver-side">
+              <div class="card" id="driver-parked"></div>
+              <div class="card" id="driver-payments"></div>
+            </div>
 
             <div class="driver-side">
               <div class="card" id="driver-reserve"></div>
               <div class="card" id="driver-plates"></div>
-              <div class="card" id="driver-payments"></div>
             </div>
           </div>
         </section>
@@ -484,47 +486,57 @@
             <p class="muted">Your details, your name, and your password</p>
           </div>
 
-          <div class="grid-2 flow-grid">
-            <div class="card">
-              <h2>Profile</h2>
+          <div class="grid-2 account-grid">
+            <div class="card" id="account-profile">
+              <div class="profile-head">
+                <span class="avatar profile-avatar" id="profile-avatar"></span>
+                <div>
+                  <h2 id="profile-name">&nbsp;</h2>
+                  <span class="pill free" id="profile-role"></span>
+                </div>
+              </div>
               <div class="rows" id="account-rows"></div>
               <button type="button" class="btn-ghost" id="account-logout">Log out</button>
             </div>
 
-            <div class="card">
-              <h2>Your name</h2>
-              <p class="muted">This is the name shown in the app. Your username stays the same.</p>
+            <div class="card account-settings">
+              <h2>Account settings</h2>
 
-              <form id="name-form" class="form" autocomplete="off" novalidate>
+              <form id="name-form" class="form settings-section" autocomplete="off" novalidate>
+                <h3>Your name</h3>
+                <p class="muted note">Shown in the app. Your username stays the same.</p>
                 <label class="field">
                   <span>Full name</span>
-                  <input id="name-input" type="text" maxlength="60" autocomplete="name">
+                  <div class="inline">
+                    <input id="name-input" type="text" maxlength="60" autocomplete="name">
+                    <button class="btn-inline" type="submit">Save</button>
+                  </div>
                 </label>
                 <div class="form-msg" id="name-msg" hidden></div>
-                <button class="btn" type="submit">Save name</button>
               </form>
-            </div>
 
-            <div class="card">
-              <h2>Change password</h2>
+              <hr class="settings-divider">
 
-              <form id="password-form" class="form" autocomplete="off" novalidate>
+              <form id="password-form" class="form settings-section" autocomplete="off" novalidate>
+                <h3>Password</h3>
+                <p class="muted note">Use at least 8 characters. Your other sessions are signed out when you change it.</p>
                 <label class="field">
                   <span>Current password</span>
                   <input id="pw-current" type="password" autocomplete="current-password">
                 </label>
 
-                <label class="field">
-                  <span>New password</span>
-                  <input id="pw-new" type="password" autocomplete="new-password">
-                </label>
+                <div class="field-pair">
+                  <label class="field">
+                    <span>New password</span>
+                    <input id="pw-new" type="password" autocomplete="new-password">
+                  </label>
 
-                <label class="field">
-                  <span>New password again</span>
-                  <input id="pw-again" type="password" autocomplete="new-password">
-                </label>
+                  <label class="field">
+                    <span>New password again</span>
+                    <input id="pw-again" type="password" autocomplete="new-password">
+                  </label>
+                </div>
 
-                <p class="muted note">Use at least 8 characters. Your other sessions are signed out when you change it.</p>
                 <div class="form-msg" id="password-msg" hidden></div>
                 <button class="btn" type="submit">Change password</button>
               </form>

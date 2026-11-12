@@ -87,3 +87,16 @@
   background: var(--primary);
   color: #ffffff;
 }
+
+/* a thing the driver's search found */
+.search-hit {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 14px;
+}
+
+#driver-payments tr.search-hit { outline: 0; background: var(--primary-soft); }
+
+.plate-chip.search-hit { outline-offset: 1px; border-radius: 999px; }
+
+.my-plate, .my-ticket-head .pill { white-space: nowrap; }

@@ -117,7 +117,9 @@ function applySession() {
   for (const button of document.querySelectorAll(".nav-item")) {
     button.hidden = !canSeeView(button.dataset.view);
   }
-  document.getElementById("search-box").hidden = !canUse("DASHBOARD");
+  /* everybody gets the search box; a driver searches their own plates, tickets and payments */
+  document.getElementById("search").setAttribute("placeholder",
+    canUse("DASHBOARD") ? "Search plate, slot or ticket" : "Search my plates, tickets or payments");
 
   renderAccount();
   watchIdle();
@@ -143,9 +145,11 @@ function renderAccount() {
   const rows = document.getElementById("account-rows");
   rows.innerHTML = "";
 
-  rows.appendChild(row("Name", user.name));
+  document.getElementById("profile-avatar").textContent = initials(user.name);
+  document.getElementById("profile-name").textContent = user.name;
+  document.getElementById("profile-role").textContent = ROLE_LABEL[user.role] || user.role;
+
   rows.appendChild(row("Username", user.username));
-  rows.appendChild(row("Role", ROLE_LABEL[user.role] || user.role));
   if (user.role === "ATTENDANT") {
     rows.appendChild(row("Shift", SHIFT_LABEL[user.detail] || user.detail));
   }

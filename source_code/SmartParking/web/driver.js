@@ -2,7 +2,7 @@
    Uses helpers from app.js (make, row, money, formatEntry, getJson, currentView) and
    from flows.js (postForm, setMessage, markChoice, plainRow, PAY_DETAIL, METHOD_LABEL, ICON_CHECK). */
 
-const driverState = { data: null, paying: null, method: "CARD", receipt: null };
+const driverState = { data: null, paying: null, method: "CARD", receipt: null, query: "" };
 
 /* drivers pay by card or online; cash is taken by the attendant */
 const DRIVER_METHODS = ["CARD", "ONLINE"];
@@ -38,6 +38,33 @@ function renderDriverPage() {
   renderDriverParked();
   renderDriverPlates();
   renderDriverPayments();
+  applyDriverSearch(false);
+}
+
+/* ---------- the search box (a driver searches only their own things) ---------- */
+
+function runDriverSearch(text) {
+  driverState.query = text.trim().toLowerCase();
+  if (driverState.query !== "" && currentView() !== "driver" && canSeeView("driver")) showView("driver");
+  applyDriverSearch(true);
+}
+
+function applyDriverSearch(scroll) {
+  const query = driverState.query || "";
+  const loose = query.replace(/[\s-]/g, "");
+  const items = document.querySelectorAll(
+    "#driver-parked .my-ticket, #driver-reserve .my-reservation, #driver-plates .plate-chip, #driver-payments tbody tr");
+
+  let first = null;
+  for (const item of items) {
+    const text = item.textContent.toLowerCase();
+    const hit = query !== "" && (text.includes(query) || text.replace(/[\s-]/g, "").includes(loose));
+    item.classList.toggle("search-hit", hit);
+    if (hit && !first) first = item;
+  }
+
+  document.getElementById("search-box").classList.toggle("nomatch", query !== "" && !first);
+  if (first && scroll) first.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 /* ---------- parked now ---------- */

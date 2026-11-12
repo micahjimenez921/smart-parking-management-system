@@ -301,6 +301,12 @@ function showView(name) {
 /* ---------- search ---------- */
 
 function runSearch(text) {
+  /* a driver is not allowed to look at the parking map, so the search stays on their own page */
+  if (!canUse("DASHBOARD")) {
+    runDriverSearch(text);
+    return;
+  }
+
   const box = document.getElementById("search-box");
   const query = text.trim().toLowerCase();
 

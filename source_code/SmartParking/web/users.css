@@ -66,3 +66,8 @@
 @media (max-width: 900px) {
   #view-users .flow-grid { grid-template-columns: 1fr; }
 }
+
+/* the account actions stay compact so Rename, Reset password and Delete sit on one line when there is room */
+#view-users .flow-grid { grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); }
+#users-list .btn-small { padding: 5px 9px; font-size: 12px; white-space: nowrap; }
+#users-list .users-actions { gap: 6px; }

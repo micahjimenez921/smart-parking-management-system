@@ -33,3 +33,5 @@
 .reserve-select { width: 100%; }
 
 .reserve-form .choice small { display: block; margin-top: 2px; }
+
+.my-reservation .my-plate, .my-reservation .pill { white-space: nowrap; }

@@ -6,7 +6,7 @@ const state = {
   selectedId: null
 };
 
-const VIEWS = ["dashboard", "entry", "exit", "tickets", "reports", "settings", "account"];
+const VIEWS = ["dashboard", "entry", "exit", "tickets", "reports", "settings", "driver", "account"];
 
 const TYPE_LABEL = { REGULAR: "Regular", HANDICAPPED: "Handicapped", VIP: "VIP" };
 const TYPE_CLASS = { REGULAR: "type-regular", HANDICAPPED: "type-handicapped", VIP: "type-vip" };

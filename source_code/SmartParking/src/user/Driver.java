@@ -38,6 +38,13 @@ public class Driver extends User {
         plates.add(plate.trim().toUpperCase());
     }
 
+    /** Takes a plate number off the account. Returns false if it was not on it. */
+    public boolean removePlate(String plate) {
+        if (plate == null) return false;
+        String wanted = normalize(plate);
+        return plates.removeIf(own -> normalize(own).equals(wanted));
+    }
+
     public List<String> getPlates() { return Collections.unmodifiableList(plates); }
 
     public boolean ownsPlate(String plate) {

@@ -73,6 +73,8 @@ public class AccessPolicy {
                 .require("/api/users/reset", Permission.USERS)
 
                 .require("/api/my/ticket", Permission.SELF_SERVICE)
-                .require("/api/my/pay", Permission.SELF_SERVICE);
+                .require("/api/my/pay", Permission.SELF_SERVICE)
+                .require("/api/my/plates/add", Permission.SELF_SERVICE)
+                .require("/api/my/plates/remove", Permission.SELF_SERVICE);
     }
 }

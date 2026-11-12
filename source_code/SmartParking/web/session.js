@@ -12,16 +12,18 @@ const VIEW_PERMISSION = {
   tickets: "TICKETS",
   reports: "REPORTS",
   settings: "SETTINGS",
+  driver: "SELF_SERVICE",
   account: null
 };
-const VIEW_ORDER = ["dashboard", "entry", "exit", "tickets", "reports", "settings", "account"];
+const VIEW_ORDER = ["dashboard", "entry", "exit", "tickets", "reports", "settings", "driver", "account"];
 const VIEW_LABEL = {
   dashboard: "Dashboard",
   entry: "Vehicle entry",
   exit: "Exit and payment",
   tickets: "Tickets",
   reports: "Reports",
-  settings: "Settings"
+  settings: "Settings",
+  driver: "My vehicles"
 };
 
 const ROLE_LABEL = { ADMINISTRATOR: "Administrator", ATTENDANT: "Parking attendant", DRIVER: "Driver" };
@@ -125,6 +127,7 @@ function applySession() {
   refreshGates();
   loadCurrentPage();
   if (currentView() === "settings") loadSettingsPage();
+  loadDriverPage(true);
 }
 
 /* ---------- My account page ---------- */

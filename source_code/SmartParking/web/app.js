@@ -99,7 +99,9 @@ function renderStats(stats) {
   const kinds = new Set(state.slots.map(s => s.type)).size;
 
   document.getElementById("meta-total").textContent = "Across " + kinds + " slot types";
-  document.getElementById("meta-available").textContent = "Ready for parking";
+  document.getElementById("meta-available").textContent = stats.reserved > 0
+    ? stats.reserved + " more held by reservations"
+    : "Ready for parking";
   document.getElementById("meta-occupied").textContent = percent + "% of the lot";
   document.getElementById("meta-revenue").textContent = "Collected payments";
 
@@ -124,7 +126,7 @@ function renderBays() {
   }
 
   for (const slot of visible) {
-    const bay = make("button", "bay " + (slot.available ? "free" : "busy"));
+    const bay = make("button", "bay " + (slot.reserved ? "reserved" : (slot.available ? "free" : "busy")));
     bay.dataset.id = slot.id;
     if (slot.id === state.selectedId) bay.classList.add("selected");
 
@@ -134,14 +136,16 @@ function renderBays() {
     bay.appendChild(top);
 
     const art = make("div", "bay-art");
-    if (slot.available) {
+    if (slot.reserved) {
+      art.appendChild(make("span", "bay-p bay-r", "R"));
+    } else if (slot.available) {
       art.appendChild(make("span", "bay-p", "P"));
     } else {
       art.innerHTML = VEHICLE_SVG[slot.vehicleType] || VEHICLE_SVG.CAR;
     }
     bay.appendChild(art);
 
-    bay.appendChild(make("div", "bay-foot", slot.available ? "Available" : slot.plate));
+    bay.appendChild(make("div", "bay-foot", slot.reserved ? "Held: " + slot.reservedFor : (slot.available ? "Available" : slot.plate)));
 
     bay.addEventListener("click", () => selectSlot(slot.id));
     container.appendChild(bay);
@@ -168,13 +172,35 @@ function renderDetail() {
 
   const head = make("div", "detail-head");
   head.appendChild(make("h2", "", "Slot " + slot.id));
-  head.appendChild(make("span", "pill " + (slot.available ? "free" : "busy"),
-    slot.available ? "Available" : "Occupied"));
+  head.appendChild(make("span", "pill " + (slot.reserved ? "held" : (slot.available ? "free" : "busy")),
+    slot.reserved ? "Reserved" : (slot.available ? "Available" : "Occupied")));
   card.appendChild(head);
 
   const rows = make("div", "rows");
   rows.appendChild(row("Type", TYPE_LABEL[slot.type] || slot.type));
   rows.appendChild(row("Rate", money(slot.rate) + " / hour"));
+
+  if (slot.reserved) {
+    rows.appendChild(row("Held for", slot.reservedFor));
+    rows.appendChild(row("Reservation", slot.reservationId));
+    rows.appendChild(row("Time left", slot.minutesLeft + " min"));
+    card.appendChild(rows);
+    card.appendChild(make("p", "detail-note",
+      "This slot is held for a driver. When " + slot.reservedFor + " arrives, register the vehicle as usual and it goes here."));
+    if (canUse("ENTRY")) {
+      const cancel = make("button", "btn-ghost", "Cancel reservation");
+      cancel.addEventListener("click", async () => {
+        try {
+          await postForm("/api/reservations/cancel", { id: slot.reservationId });
+        } catch (error) {
+          console.error(error);
+        }
+        refresh();
+      });
+      card.appendChild(cancel);
+    }
+    return;
+  }
 
   if (slot.available) {
     card.appendChild(rows);
@@ -224,7 +250,7 @@ function renderRates() {
 function chooseDefaultSelection() {
   const stillThere = state.slots.some(s => s.id === state.selectedId);
   if (stillThere) return;
-  const firstBusy = state.slots.find(s => !s.available);
+  const firstBusy = state.slots.find(s => !s.available && !s.reserved);
   const first = firstBusy || state.slots[0];
   state.selectedId = first ? first.id : null;
 }

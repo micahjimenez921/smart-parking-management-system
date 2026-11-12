@@ -8,6 +8,7 @@ import gate.GateController;
 import gate.GateState;
 import model.ParkingSlot;
 import model.Receipt;
+import model.Reservation;
 import model.Ticket;
 import model.Vehicle;
 import model.VehicleFactory;
@@ -61,11 +62,13 @@ public class ParkingApi {
     private String statsJson() {
         int total = lot.getSlots().size();
         int free = lot.getAvailableCount();
+        int reserved = lot.getReservedCount();
         return "{"
                 + "\"lotName\":" + Json.quote(lot.getName())
                 + ",\"total\":" + total
                 + ",\"available\":" + free
-                + ",\"occupied\":" + (total - free)
+                + ",\"reserved\":" + reserved
+                + ",\"occupied\":" + (total - free - reserved)
                 + ",\"revenue\":" + lot.getTotalRevenue()
                 + ",\"feeRule\":" + Json.quote(lot.getFeeStrategy().getDescription())
                 + ",\"lostTicketPenalty\":" + lot.getLostTicketPenalty()
@@ -83,7 +86,16 @@ public class ParkingApi {
                     .append("\"id\":").append(Json.quote(s.getSlotId()))
                     .append(",\"type\":").append(Json.quote(s.getSlotType()))
                     .append(",\"rate\":").append(s.getHourlyRate())
-                    .append(",\"available\":").append(s.isAvailable());
+                    .append(",\"available\":").append(s.isAvailable() && !lot.isReserved(s));
+
+            Reservation held = lot.isReserved(s) ? lot.findReservationBySlot(s) : null;
+            if (held != null) {
+                sb.append(",\"reserved\":true")
+                        .append(",\"reservationId\":").append(Json.quote(held.getId()))
+                        .append(",\"reservedFor\":").append(Json.quote(held.getPlateNumber()))
+                        .append(",\"reservedUntil\":").append(Json.quote(held.getExpiresAt().toString()))
+                        .append(",\"minutesLeft\":").append(held.minutesLeft(LocalDateTime.now()));
+            }
 
             Ticket t = lot.findTicketBySlot(s);
             if (t != null) {
@@ -263,9 +275,14 @@ public class ParkingApi {
         }
 
         try {
+            boolean hadReservation = lot.findReservationByPlate(plate) != null;
             Ticket ticket = lot.parkVehicle(vehicle, slotType);
             persist();
-            sendJson(exchange, 200, ticketJson(ticket));
+            String json = ticketJson(ticket);
+            if (hadReservation) {
+                json = json.substring(0, json.length() - 1) + ",\"fromReservation\":true}";
+            }
+            sendJson(exchange, 200, json);
         } catch (ParkingFullException | IllegalStateException e) {
             sendError(exchange, 409, e.getMessage());
         }

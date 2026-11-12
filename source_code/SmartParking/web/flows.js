@@ -75,13 +75,15 @@ function renderEntryAvailability() {
   for (const type of SLOT_TYPES) {
     const ofType = state.slots.filter(s => s.type === type);
     const free = ofType.filter(s => s.available).length;
+    const held = ofType.filter(s => s.reserved).length;
     const info = document.getElementById("info-" + type);
     const button = document.getElementById("choice-slot-" + type);
 
     if (ofType.length === 0) {
       info.textContent = "No slots";
     } else {
-      info.textContent = money(ofType[0].rate) + "/hr \u00B7 " + (free > 0 ? free + " free" : "Full");
+      info.textContent = money(ofType[0].rate) + "/hr \u00B7 " + (free > 0 ? free + " free" : "Full")
+        + (held > 0 ? " \u00B7 " + held + " held" : "");
     }
     button.disabled = free === 0;
   }
@@ -114,8 +116,10 @@ function renderEntryResult() {
   plainRow(rows, "Rate", money(t.rate) + " / hour");
   plainRow(rows, "Entered", formatEntry(t.entryTime));
   card.appendChild(rows);
-  plainRow(rows, "Entered", formatEntry(t.entryTime));
-  card.appendChild(rows);
+
+  if (t.fromReservation) {
+    card.appendChild(make("div", "gate-notice open", "This vehicle had a reservation, so it was placed in its reserved slot."));
+  }
 
   const gateBox = make("div", "gate-notice closed");
   gateBox.id = "entry-gate-notice";

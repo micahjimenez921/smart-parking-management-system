@@ -50,6 +50,8 @@ public class AccessPolicy {
                 .anyLoggedIn("/api/logout")
                 .anyLoggedIn("/api/me")
                 .anyLoggedIn("/api/password")
+                .anyLoggedIn("/api/profile")
+                .anyLoggedIn("/api/notifications")
 
                 .require("/api/stats", Permission.DASHBOARD)
                 .require("/api/slots", Permission.DASHBOARD)
@@ -72,6 +74,13 @@ public class AccessPolicy {
                 .require("/api/users/add", Permission.USERS)
                 .require("/api/users/remove", Permission.USERS)
                 .require("/api/users/reset", Permission.USERS)
+                .require("/api/users/rename", Permission.USERS)
+
+                .require("/api/reservations", Permission.DASHBOARD)
+                .require("/api/reservations/cancel", Permission.ENTRY)
+                .require("/api/my/reservations", Permission.SELF_SERVICE)
+                .require("/api/my/reserve", Permission.SELF_SERVICE)
+                .require("/api/my/reserve/cancel", Permission.SELF_SERVICE)
 
                 .require("/api/my/ticket", Permission.SELF_SERVICE)
                 .require("/api/my/pay", Permission.SELF_SERVICE)

@@ -75,7 +75,7 @@ function renderSlotList(slots) {
     typeCell.appendChild(typeChip(slot.type));
     tr.appendChild(typeCell);
 
-    cell(tr, slot.available ? "Free" : "Parked: " + slot.plate);
+    cell(tr, slot.reserved ? "Reserved: " + slot.reservedFor : (slot.available ? "Free" : "Parked: " + slot.plate));
 
     const action = make("td");
     const button = make("button", "btn-small danger", "Remove");
@@ -84,6 +84,10 @@ function renderSlotList(slots) {
     } else {
       button.disabled = true;
       button.setAttribute("title", "Only a free slot can be removed.");
+    }
+    if (slot.reserved) {
+      button.disabled = true;
+      button.setAttribute("title", "This slot is reserved. Cancel the reservation first.");
     }
     action.appendChild(button);
     tr.appendChild(action);

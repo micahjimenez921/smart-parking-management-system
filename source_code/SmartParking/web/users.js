@@ -1,7 +1,7 @@
 /* Users page (administrator): list every account, add one of any role, reset a password, delete.
    Uses helpers from app.js (make, getJson, currentView) and flows.js (postForm, setMessage). */
 
-const usersState = { users: [], resetting: null, confirmDelete: null, notice: null, loaded: false };
+const usersState = { users: [], resetting: null, renaming: null, confirmDelete: null, notice: null, loaded: false };
 
 const DETAIL_SHIFTS = ["DAY", "EVENING", "NIGHT"];
 
@@ -13,7 +13,7 @@ async function loadUsersPage(force) {
     usersState.users = data.users;
     usersState.loaded = true;
     /* the automatic refresh must not close a reset panel or wipe what someone is typing */
-    if (!force && (usersState.resetting || usersFormBusy())) return;
+    if (!force && (usersState.resetting || usersState.renaming || usersFormBusy())) return;
     renderUsersList();
   } catch (error) {
     if (!usersState.loaded) {
@@ -42,6 +42,7 @@ function renderUsersList() {
   card.appendChild(make("h2", "", "Accounts (" + usersState.users.length + ")"));
 
   if (usersState.notice) card.appendChild(usersNoticeBox(usersState.notice));
+  if (usersState.renaming) card.appendChild(usersRenamePanel(usersState.renaming));
   if (usersState.resetting) card.appendChild(usersResetPanel(usersState.resetting));
 
   const wrap = make("div", "table-wrap");
@@ -85,10 +86,23 @@ function usersRow(user) {
   const actions = make("div", "users-actions");
   cell.appendChild(actions);
   if (!isMe) {
+    const rename = make("button", "btn-small", "Rename");
+    rename.setAttribute("type", "button");
+    rename.addEventListener("click", () => {
+      usersState.renaming = user;
+      usersState.resetting = null;
+      usersState.notice = null;
+      renderUsersList();
+      const input = document.getElementById("rename-input");
+      if (input) input.focus();
+    });
+    actions.appendChild(rename);
+
     const reset = make("button", "btn-small", "Reset password");
     reset.setAttribute("type", "button");
     reset.addEventListener("click", () => {
       usersState.resetting = user;
+      usersState.renaming = null;
       usersState.notice = null;
       renderUsersList();
       const input = document.getElementById("reset-password");
@@ -143,6 +157,59 @@ function usersNoticeBox(notice) {
     box.appendChild(make("small", "", "Write it down and give it to the person now. It is not shown again."));
   }
   return box;
+}
+
+/* ---------- rename ---------- */
+
+function usersRenamePanel(user) {
+  const form = make("form", "form users-reset");
+  form.id = "users-rename-form";
+  form.setAttribute("autocomplete", "off");
+  form.setAttribute("novalidate", "");
+
+  form.appendChild(make("h3", "", "Rename " + user.username));
+
+  const label = make("label", "field");
+  label.appendChild(make("span", "", "Full name"));
+  const input = make("input");
+  input.id = "rename-input";
+  input.setAttribute("type", "text");
+  input.setAttribute("maxlength", "60");
+  input.value = user.name;
+  label.appendChild(input);
+  form.appendChild(label);
+
+  const message = make("div", "form-msg");
+  message.hidden = true;
+  form.appendChild(message);
+
+  const buttons = make("div", "users-buttons");
+  const save = make("button", "btn", "Save name");
+  save.setAttribute("type", "submit");
+  const cancel = make("button", "btn-ghost", "Cancel");
+  cancel.setAttribute("type", "button");
+  cancel.addEventListener("click", () => {
+    usersState.renaming = null;
+    renderUsersList();
+  });
+  buttons.appendChild(save);
+  buttons.appendChild(cancel);
+  form.appendChild(buttons);
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    save.disabled = true;
+    try {
+      const result = await postForm("/api/users/rename", { id: user.id, name: input.value });
+      usersState.renaming = null;
+      usersState.notice = { kind: "success", text: "Renamed " + user.username + " to " + result.user.name + "." };
+      await loadUsersPage(true);
+    } catch (error) {
+      setMessage(message, error.message, "error");
+      save.disabled = false;
+    }
+  });
+  return form;
 }
 
 /* ---------- reset a password ---------- */

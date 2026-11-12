@@ -11,10 +11,12 @@ import gate.GateController;
 import model.ParkingSlot;
 import model.SlotFactory;
 import model.Receipt;
+import model.Reservation;
 import model.Ticket;
 import model.Vehicle;
 import payment.PaymentMethod;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -24,12 +26,16 @@ import java.util.Map;
 
 public class ParkingLot {
     public static final int MAX_SLOTS = 200;
+    public static final int RESERVATION_MINUTES = 30;
 
     private String name;
     private List<ParkingSlot> slots = new ArrayList<>();
     private Map<String, Ticket> activeTickets = new HashMap<>();
     private List<Receipt> receipts = new ArrayList<>();
     private int ticketCounter = 0;
+    private final List<Reservation> reservations = new ArrayList<>();
+    private int reservationCounter = 0;
+    private final EventLog events = new EventLog();
     private FeeStrategy feeStrategy = new HourlyFee();
     private double lostTicketPenalty = 100.0;
     private final GateController entryGate = new GateController("ENTRY", 15);
@@ -44,6 +50,8 @@ public class ParkingLot {
     public List<ParkingSlot> getSlots() { return slots; }
 
     public List<Receipt> getReceipts() { return receipts; }
+
+    public EventLog getEvents() { return events; }
 
     public void addSlot(ParkingSlot slot) {
         slots.add(slot);
@@ -86,6 +94,9 @@ public class ParkingLot {
         if (!slot.isAvailable()) {
             throw new IllegalStateException("Slot " + slotId + " has a vehicle in it and cannot be removed.");
         }
+        if (isReserved(slot)) {
+            throw new IllegalStateException("Slot " + slotId + " is reserved and cannot be removed.");
+        }
         slots.remove(slot);
     }
 
@@ -95,14 +106,22 @@ public class ParkingLot {
             throw new IllegalStateException("Slots cannot be cleared while vehicles are parked.");
         }
         slots.clear();
+        reservations.clear();
     }
 
+    /** Slots that anyone can park in: nobody is in them and they are not held for a reservation. */
     public int getAvailableCount() {
+        purgeExpired(LocalDateTime.now());
         int count = 0;
         for (ParkingSlot s : slots) {
-            if (s.isAvailable()) count++;
+            if (s.isAvailable() && !isReserved(s)) count++;
         }
         return count;
+    }
+
+    public int getReservedCount() {
+        purgeExpired(LocalDateTime.now());
+        return reservations.size();
     }
 
     public void addReceipt(Receipt receipt) {
@@ -250,12 +269,134 @@ public class ParkingLot {
     }
 
     public ParkingSlot findAvailableSlot(String slotType) {
+        purgeExpired(LocalDateTime.now());
         for (ParkingSlot s : slots) {
-            if (s.isAvailable() && s.getSlotType().equals(slotType)) {
+            if (s.isAvailable() && !isReserved(s) && s.getSlotType().equals(slotType)) {
                 return s;
             }
         }
         return null;
+    }
+
+    /* ---------- reservations ---------- */
+
+    public int getReservationCounter() { return reservationCounter; }
+
+    public void setReservationCounter(int value) { reservationCounter = Math.max(reservationCounter, value); }
+
+    /** The reservations that are still running, oldest first. */
+    public List<Reservation> getReservations() {
+        purgeExpired(LocalDateTime.now());
+        return new ArrayList<>(reservations);
+    }
+
+    public boolean isReserved(ParkingSlot slot) {
+        for (Reservation r : reservations) {
+            if (r.getSlot() == slot) return true;
+        }
+        return false;
+    }
+
+    public Reservation findReservation(String id) {
+        purgeExpired(LocalDateTime.now());
+        for (Reservation r : reservations) {
+            if (r.getId().equalsIgnoreCase(id == null ? "" : id.trim())) return r;
+        }
+        return null;
+    }
+
+    public Reservation findReservationBySlot(ParkingSlot slot) {
+        for (Reservation r : reservations) {
+            if (r.getSlot() == slot) return r;
+        }
+        return null;
+    }
+
+    public Reservation findReservationByPlate(String plateNumber) {
+        purgeExpired(LocalDateTime.now());
+        if (plateNumber == null) return null;
+        String wanted = normalizePlate(plateNumber);
+        for (Reservation r : reservations) {
+            if (normalizePlate(r.getPlateNumber()).equals(wanted)) return r;
+        }
+        return null;
+    }
+
+    public Reservation reserve(String ownerId, String plateNumber, String slotType) throws ParkingFullException {
+        return reserve(ownerId, plateNumber, slotType, LocalDateTime.now());
+    }
+
+    /** Holds a free slot of the chosen type for this plate for RESERVATION_MINUTES. */
+    public Reservation reserve(String ownerId, String plateNumber, String slotType, LocalDateTime now)
+            throws ParkingFullException {
+        if (plateNumber == null || !plateNumber.trim().matches("[A-Za-z0-9 -]{2,12}")) {
+            throw new IllegalArgumentException("Enter a valid plate number (2 to 12 letters, numbers, spaces or dashes).");
+        }
+        purgeExpired(now);
+        if (isPlateParked(plateNumber)) {
+            throw new IllegalStateException("Vehicle " + plateNumber.trim().toUpperCase() + " is already parked.");
+        }
+        if (findReservationByPlate(plateNumber) != null) {
+            throw new IllegalStateException(plateNumber.trim().toUpperCase() + " already has a reservation.");
+        }
+        ParkingSlot slot = findAvailableSlot(slotType);
+        if (slot == null) {
+            throw new ParkingFullException("No free " + slotType + " slot to reserve.");
+        }
+
+        reservationCounter++;
+        String id = String.format("R-%03d", reservationCounter);
+        String plate = plateNumber.trim().toUpperCase();
+        Reservation reservation = new Reservation(id, ownerId, plate, slot, now, now.plusMinutes(RESERVATION_MINUTES));
+        reservations.add(reservation);
+        events.record(EventLog.STAFF, "info", "Slot reserved",
+                plate + " reserved slot " + slot.getSlotId() + " for " + RESERVATION_MINUTES + " minutes.", now);
+        return reservation;
+    }
+
+    /** Puts back a saved reservation. The slot must exist, be empty and not be held already. */
+    public void restoreReservation(Reservation reservation) {
+        ParkingSlot slot = reservation.getSlot();
+        if (!slot.isAvailable() || isReserved(slot)) {
+            throw new IllegalStateException("slot " + slot.getSlotId() + " is not free");
+        }
+        reservations.add(reservation);
+    }
+
+    /** Ends a reservation that is still running. byStaff tells the driver who did it. */
+    public Reservation cancelReservation(String id, boolean byStaff) {
+        Reservation r = findReservation(id);
+        if (r == null) {
+            throw new IllegalArgumentException("Reservation " + (id == null ? "" : id.trim()) + " not found.");
+        }
+        reservations.remove(r);
+        if (byStaff) {
+            events.record(r.getOwnerId(), "warn", "Reservation cancelled",
+                    "Staff cancelled your reservation " + r.getId() + " for " + r.getPlateNumber()
+                            + ". Slot " + r.getSlot().getSlotId() + " was released.");
+        } else {
+            events.record(EventLog.STAFF, "info", "Reservation cancelled",
+                    r.getPlateNumber() + " cancelled the reservation for slot " + r.getSlot().getSlotId() + ".");
+        }
+        return r;
+    }
+
+    /** Removes reservations whose time ran out and tells the people involved. Safe to call at any time. */
+    public List<Reservation> purgeExpired(LocalDateTime now) {
+        List<Reservation> gone = new ArrayList<>();
+        for (Reservation r : reservations) {
+            if (r.isExpired(now)) gone.add(r);
+        }
+        for (Reservation r : gone) {
+            reservations.remove(r);
+            events.record(r.getOwnerId(), "warn", "Reservation expired",
+                    "Your reservation " + r.getId() + " for " + r.getPlateNumber() + " ran out. Slot "
+                            + r.getSlot().getSlotId() + " was released. You can reserve again.", r.getExpiresAt());
+            events.record(EventLog.STAFF, "info", "Reservation expired",
+                    "The reservation for " + r.getPlateNumber() + " ran out. Slot " + r.getSlot().getSlotId()
+                            + " is free again.", r.getExpiresAt());
+        }
+        return gone;
     }
 
     public Ticket parkVehicle(Vehicle vehicle, String slotType) throws ParkingFullException {
@@ -263,7 +404,19 @@ public class ParkingLot {
             throw new IllegalStateException(
                     "Vehicle " + vehicle.getPlateNumber() + " is already parked.");
         }
-        ParkingSlot slot = findAvailableSlot(slotType);
+        purgeExpired(LocalDateTime.now());
+
+        // a vehicle with a reservation goes to the slot that was held for it
+        Reservation held = findReservationByPlate(vehicle.getPlateNumber());
+        ParkingSlot slot;
+        if (held != null) {
+            slot = held.getSlot();
+            reservations.remove(held);
+            events.record(held.getOwnerId(), "info", "Welcome",
+                    vehicle.getPlateNumber() + " arrived and is parked in the slot you reserved (" + slot.getSlotId() + ").");
+        } else {
+            slot = findAvailableSlot(slotType);
+        }
         if (slot == null) {
             throw new ParkingFullException("No available " + slotType + " slot.");
         }

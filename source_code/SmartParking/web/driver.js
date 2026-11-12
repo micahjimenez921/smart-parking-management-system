@@ -13,6 +13,7 @@ async function loadDriverPage(force) {
   try {
     const data = await getJson("/api/my/ticket");
     driverState.data = data;
+    if (typeof loadReservations === "function") loadReservations(force);
 
     /* the automatic refresh must never wipe a payment form or a plate number someone is typing */
     if (!force && (driverState.paying || plateInputBusy())) return;

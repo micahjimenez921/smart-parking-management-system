@@ -77,6 +77,7 @@ public class UserApiTests {
             runSection("Adding accounts", () -> addTests());
             runSection("Resetting passwords", () -> resetTests());
             runSection("Deleting accounts", () -> deleteTests());
+            runSection("Changing names", () -> nameTests());
             runSection("Accounts are saved", () -> savedTests());
             runSection("Driver self-registration", () -> registerTests());
         } finally {
@@ -250,6 +251,61 @@ public class UserApiTests {
         checkEquals("the last administrator cannot be deleted (400)", 400,
                 call("POST", "/api/users/remove", ada2, form("id", directory.findByUsername("ada2").getId())).status);
         check("still one administrator", directory.countByRole(Role.ADMINISTRATOR) == 1);
+    }
+
+    private static void nameTests() throws Exception {
+        String ada = cookieFor("ada2", "ada2-pass-123");
+        String dee = cookieFor("dee", "driver-pass-1");
+        String ben = cookieFor("nina", "nina-pass-123");
+
+        checkEquals("signed-out visitors cannot change a name (401)", 401,
+                call("POST", "/api/profile", null, form("name", "Nobody")).status);
+        checkEquals("GET is refused (405)", 405, call("GET", "/api/profile", dee, null).status);
+
+        Reply changed = call("POST", "/api/profile", dee, form("name", "  Delia Driver  "));
+        checkEquals("a driver changes their own name", 200, changed.status);
+        check("the extra spaces are trimmed", changed.body.contains("\"name\":\"Delia Driver\""));
+        check("the username does not change", changed.body.contains("\"username\":\"dee\""));
+        check("the account answer shows the new name", call("GET", "/api/me", dee, null).body.contains("Delia Driver"));
+        String second = cookieFor("dee", "driver-pass-1");
+        check("another session of the same account shows it too", call("GET", "/api/me", second, null).body.contains("Delia Driver"));
+        check("the administrator's list shows it", call("GET", "/api/users", ada, null).body.contains("Delia Driver"));
+
+        checkEquals("an attendant can change their own name", 200, call("POST", "/api/profile", ben, form("name", "Nina N.")).status);
+        checkEquals("an administrator can change their own name", 200, call("POST", "/api/profile", ada, form("name", "Ada Lovelace")).status);
+        checkEquals("an empty name is refused (400)", 400, call("POST", "/api/profile", dee, form("name", "   ")).status);
+        checkEquals("a name over 60 characters is refused (400)", 400, call("POST", "/api/profile", dee, form("name", "x".repeat(61))).status);
+        check("a refused change leaves the name as it was", call("GET", "/api/me", dee, null).body.contains("Delia Driver"));
+
+        // one account cannot rename another through the profile address
+        call("POST", "/api/profile", dee, form("name", "Delia Driver", "id", directory.findByUsername("nina").getId()));
+        check("the id in a profile request is ignored", directory.findByUsername("nina").getName().equals("Nina N."));
+
+        // an administrator renames somebody else
+        String ninaId = directory.findByUsername("nina").getId();
+        checkEquals("an attendant cannot rename others (403)", 403,
+                call("POST", "/api/users/rename", ben, form("id", ninaId, "name", "Self Promoted")).status);
+        checkEquals("a driver cannot rename others (403)", 403,
+                call("POST", "/api/users/rename", dee, form("id", ninaId, "name", "Hacked")).status);
+        checkEquals("signed-out visitors cannot rename (401)", 401,
+                call("POST", "/api/users/rename", null, form("id", ninaId, "name", "Hacked")).status);
+        checkEquals("an administrator renames an attendant", 200,
+                call("POST", "/api/users/rename", ada, form("id", ninaId, "name", "Nina Night Jr.")).status);
+        check("the new name is in the list", call("GET", "/api/users", ada, null).body.contains("Nina Night Jr."));
+        check("the attendant's open session shows it", call("GET", "/api/me", ben, null).body.contains("Nina Night Jr."));
+        checkEquals("they are still signed in", 200, call("GET", "/api/me", ben, null).status);
+        checkEquals("an unknown account is a 404", 404, call("POST", "/api/users/rename", ada, form("id", "U-999", "name", "Ghost")).status);
+        checkEquals("an empty name is refused (400)", 400, call("POST", "/api/users/rename", ada, form("id", ninaId, "name", "")).status);
+        checkEquals("GET is refused on rename (405)", 405, call("GET", "/api/users/rename", ada, null).status);
+        check("the names were saved to the file", savedNames().contains("Delia Driver") && savedNames().contains("Nina Night Jr."));
+    }
+
+    private static String savedNames() throws Exception {
+        UserDirectory reloaded = new UserDirectory();
+        repository.load(reloaded);
+        StringBuilder sb = new StringBuilder();
+        for (user.User u : reloaded.getUsers()) sb.append(u.getName()).append("|");
+        return sb.toString();
     }
 
     private static void savedTests() throws Exception {

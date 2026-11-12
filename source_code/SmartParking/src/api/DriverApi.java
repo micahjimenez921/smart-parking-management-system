@@ -123,6 +123,11 @@ public class DriverApi {
             PaymentMethod method = PaymentFactory.create(methodName, form.get("detail"));
             Receipt receipt = lot.checkout(ticketId, method);
             persistLot();
+            lot.getEvents().record(service.EventLog.STAFF, "info", "Online payment",
+                    "A driver paid PHP " + String.format("%.2f", receipt.getAmount()) + " by " + receipt.getMethodName().toLowerCase()
+                            + " for " + receipt.getPlateNumber() + " (ticket " + receipt.getTicketId() + ").");
+            lot.getEvents().record(driver.getId(), "info", "Payment received",
+                    "Your payment for " + receipt.getPlateNumber() + " was received. The exit gate is open.");
             sendJson(exchange, 200, receiptJson(receipt));
         } catch (InvalidTicketException e) {
             sendError(exchange, 404, e.getMessage());

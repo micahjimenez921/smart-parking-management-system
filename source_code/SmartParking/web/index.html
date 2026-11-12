@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="account.css">
   <link rel="stylesheet" href="driver.css">
   <link rel="stylesheet" href="users.css">
+  <link rel="stylesheet" href="reservations.css">
+  <link rel="stylesheet" href="notifications.css">
 </head>
 <body class="pending">
   <div class="app">
@@ -72,9 +74,13 @@
 
         <div class="top-actions">
           <button class="icon-btn" id="theme-toggle" title="Switch light and dark mode" aria-label="Switch light and dark mode"></button>
-          <button class="icon-btn has-dot" title="Notifications" aria-label="Notifications">
-            <svg class="ico" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          </button>
+          <div class="bell-wrap">
+            <button class="icon-btn" id="bell-button" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+              <svg class="ico" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span class="bell-count" id="bell-count" hidden>0</span>
+            </button>
+            <div class="bell-panel" id="bell-panel" role="region" aria-label="Notifications" hidden></div>
+          </div>
           <div class="user">
             <span class="hello">Hello, <b id="user-name">&nbsp;</b></span>
             <span class="avatar" id="user-avatar"></span>
@@ -158,6 +164,7 @@
               <div class="legend">
                 <span><i class="dot free"></i>Available</span>
                 <span><i class="dot busy"></i>Occupied</span>
+                <span><i class="dot held"></i>Reserved</span>
               </div>
 
               <div class="bays" id="bays"></div>
@@ -464,6 +471,7 @@
             <div class="card" id="driver-parked"></div>
 
             <div class="driver-side">
+              <div class="card" id="driver-reserve"></div>
               <div class="card" id="driver-plates"></div>
               <div class="card" id="driver-payments"></div>
             </div>
@@ -473,7 +481,7 @@
         <section class="view" id="view-account">
           <div class="page-head">
             <h1>My account</h1>
-            <p class="muted">Your details, and your password</p>
+            <p class="muted">Your details, your name, and your password</p>
           </div>
 
           <div class="grid-2 flow-grid">
@@ -481,6 +489,20 @@
               <h2>Profile</h2>
               <div class="rows" id="account-rows"></div>
               <button type="button" class="btn-ghost" id="account-logout">Log out</button>
+            </div>
+
+            <div class="card">
+              <h2>Your name</h2>
+              <p class="muted">This is the name shown in the app. Your username stays the same.</p>
+
+              <form id="name-form" class="form" autocomplete="off" novalidate>
+                <label class="field">
+                  <span>Full name</span>
+                  <input id="name-input" type="text" maxlength="60" autocomplete="name">
+                </label>
+                <div class="form-msg" id="name-msg" hidden></div>
+                <button class="btn" type="submit">Save name</button>
+              </form>
             </div>
 
             <div class="card">
@@ -525,5 +547,7 @@
     <script src="settings.js"></script>
     <script src="driver.js"></script>
     <script src="users.js"></script>
+    <script src="reservations.js"></script>
+    <script src="notifications.js"></script>
 </body>
 </html>

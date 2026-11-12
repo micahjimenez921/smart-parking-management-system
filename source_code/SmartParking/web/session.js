@@ -112,6 +112,7 @@ function applySession() {
 
   document.getElementById("user-name").textContent = user.name;
   document.getElementById("user-avatar").textContent = initials(user.name);
+  document.getElementById("name-input").value = user.name;
 
   for (const button of document.querySelectorAll(".nav-item")) {
     button.hidden = !canSeeView(button.dataset.view);
@@ -120,6 +121,7 @@ function applySession() {
 
   renderAccount();
   watchIdle();
+  startNotifications();
 
   document.body.classList.remove("pending");
   showView(location.hash.replace("#", ""));
@@ -131,6 +133,7 @@ function applySession() {
   if (currentView() === "settings") loadSettingsPage();
   loadDriverPage(true);
   startUsersPage();
+  startReservations();
 }
 
 /* ---------- My account page ---------- */
@@ -161,6 +164,38 @@ function renderAccount() {
   line.appendChild(make("span", "k", "Can open"));
   line.appendChild(menus);
   rows.appendChild(line);
+}
+
+/* shows the current name everywhere it appears */
+function showNameEverywhere() {
+  document.getElementById("user-name").textContent = session.user.name;
+  document.getElementById("user-avatar").textContent = initials(session.user.name);
+  document.getElementById("name-input").value = session.user.name;
+  renderAccount();
+}
+
+async function changeName(event) {
+  event.preventDefault();
+  const message = document.getElementById("name-msg");
+  const wanted = document.getElementById("name-input").value.trim();
+
+  if (wanted === "") {
+    setMessage(message, "Enter your name.", "error");
+    return;
+  }
+  if (wanted === session.user.name) {
+    setMessage(message, "That is already your name.", "error");
+    return;
+  }
+
+  try {
+    const user = await postForm("/api/profile", { name: wanted });
+    session.user.name = user.name;
+    showNameEverywhere();
+    setMessage(message, "Name saved.", "success");
+  } catch (error) {
+    setMessage(message, error.message, "error");
+  }
 }
 
 async function changePassword(event) {
@@ -213,3 +248,4 @@ function watchIdle() {
 document.getElementById("logout-button").addEventListener("click", logout);
 document.getElementById("account-logout").addEventListener("click", logout);
 document.getElementById("password-form").addEventListener("submit", changePassword);
+document.getElementById("name-form").addEventListener("submit", changeName);

@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import exception.AuthenticationException;
 import security.PasswordHasher;
 import service.AuthService;
+import service.EventLog;
 import service.UserDirectory;
 import storage.UserRepository;
 import user.Permission;
@@ -35,6 +36,13 @@ public class UserApi {
     private final UserRepository repository;
     private final AccessGuard guard;
 
+    private EventLog eventLog;
+
+    /** Optional: where to announce new driver accounts to the administrators. */
+    public void setEventLog(EventLog log) {
+        this.eventLog = log;
+    }
+
     private final Map<String, Deque<Instant>> registrationsByAddress = new HashMap<>();
     private final Deque<Instant> registrations = new ArrayDeque<>();
 
@@ -50,6 +58,7 @@ public class UserApi {
         server.addRoute("/api/users/add", this::handleAdd);
         server.addRoute("/api/users/reset", this::handleReset);
         server.addRoute("/api/users/remove", this::handleRemove);
+        server.addRoute("/api/users/rename", this::handleRename);
         server.addRoute("/api/register", this::handleRegister);
     }
 
@@ -136,6 +145,29 @@ public class UserApi {
                 + (generated ? ",\"generatedPassword\":" + Json.quote(password) : "") + "}");
     }
 
+    private void handleRename(HttpExchange exchange) throws IOException {
+        if (!"POST".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Use POST for this address.");
+            return;
+        }
+        Map<String, String> form = readForm(exchange);
+        User target = directory.findById(form.getOrDefault("id", ""));
+        if (target == null) {
+            sendError(exchange, 404, "User " + form.getOrDefault("id", "").trim() + " not found.");
+            return;
+        }
+        try {
+            synchronized (directory) {
+                target.setName(form.getOrDefault("name", ""));
+                persist();
+            }
+        } catch (IllegalArgumentException e) {
+            sendError(exchange, 400, e.getMessage());
+            return;
+        }
+        sendJson(exchange, 200, "{\"user\":" + userJson(target) + "}");
+    }
+
     private void handleRemove(HttpExchange exchange) throws IOException {
         if (!"POST".equals(exchange.getRequestMethod())) {
             sendError(exchange, 405, "Use POST for this address.");
@@ -196,6 +228,10 @@ public class UserApi {
             }
             recordRegistration(address, Instant.now());
             persist();
+            if (eventLog != null) {
+                eventLog.record(EventLog.ADMIN, "info", "New driver account",
+                        created.getName() + " (" + created.getUsername() + ") created a driver account.");
+            }
         }
 
         // sign the new driver straight in

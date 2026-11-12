@@ -34,6 +34,7 @@ public class AuthApi {
         server.addRoute("/api/logout", this::handleLogout);
         server.addRoute("/api/me", this::handleMe);
         server.addRoute("/api/password", this::handlePassword);
+        server.addRoute("/api/profile", this::handleProfile);
     }
 
     private void persist() {
@@ -112,6 +113,27 @@ public class AuthApi {
         } catch (AuthenticationException | IllegalArgumentException e) {
             sendError(exchange, 400, e.getMessage());
         }
+    }
+
+    /** Changes the signed-in person's own name. */
+    private void handleProfile(HttpExchange exchange) throws IOException {
+        if (!"POST".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Use POST for this address.");
+            return;
+        }
+        User user = guard.userOf(exchange);
+        if (user == null) {
+            sendError(exchange, 401, "Please sign in.");
+            return;
+        }
+        try {
+            user.setName(readForm(exchange).getOrDefault("name", ""));
+        } catch (IllegalArgumentException e) {
+            sendError(exchange, 400, e.getMessage());
+            return;
+        }
+        persist();
+        sendJson(exchange, 200, userJson(user));
     }
 
     /* ---------- building the answers ---------- */

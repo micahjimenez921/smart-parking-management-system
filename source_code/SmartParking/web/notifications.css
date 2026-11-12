@@ -1,0 +1,96 @@
+/* The notification bell and its list. Colors come from style.css. */
+
+.bell-wrap { position: relative; }
+
+.bell-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  border: 2px solid var(--surface);
+  background: var(--busy);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+}
+
+.bell-panel {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  z-index: 50;
+  width: 380px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 16px 40px rgba(17, 24, 39, 0.18);
+}
+
+.bell-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.bell-head .link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bell-head .link-button:disabled { color: var(--muted); cursor: default; }
+
+.bell-empty { margin: 0; padding: 28px 16px; text-align: center; color: var(--muted); }
+
+.bell-list { margin: 0; padding: 0; list-style: none; }
+
+.bell-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.bell-item:last-child { border-bottom: 0; }
+
+.bell-item.unread { background: var(--primary-soft); }
+
+.bell-mark {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.bell-item.warn .bell-mark { background: var(--amber); }
+.bell-item.error .bell-mark { background: var(--busy); }
+
+.bell-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bell-body span { font-size: 13px; color: var(--text); overflow-wrap: anywhere; }
+.bell-body small { font-size: 12px; }
+
+@media (max-width: 600px) {
+  .bell-panel {
+    position: fixed;
+    top: 70px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+}

@@ -2,6 +2,7 @@ package storage;
 
 import model.ParkingSlot;
 import model.Receipt;
+import model.Reservation;
 import model.SlotFactory;
 import model.Ticket;
 import model.Vehicle;
@@ -38,6 +39,7 @@ public class FileParkingRepository implements ParkingRepository {
         List<String> lines = new ArrayList<>();
         lines.add(HEADER);
         lines.add(join("COUNTER", String.valueOf(lot.getTicketCounter())));
+        lines.add(join("RESCOUNTER", String.valueOf(lot.getReservationCounter())));
 
         for (ParkingSlot slot : lot.getSlots()) {
             lines.add(join("SLOT", slot.getSlotId(), slot.getSlotType()));
@@ -57,6 +59,17 @@ public class FileParkingRepository implements ParkingRepository {
                     t.getVehicle().getOwnerName(),
                     t.getSlot().getSlotId(),
                     t.getEntryTime().toString()));
+        }
+
+        // only reservations that are still running are saved
+        for (Reservation r : lot.getReservations()) {
+            lines.add(join("RESERVATION",
+                    r.getId(),
+                    r.getOwnerId(),
+                    r.getPlateNumber(),
+                    r.getSlot().getSlotId(),
+                    r.getCreatedAt().toString(),
+                    r.getExpiresAt().toString()));
         }
 
         for (Receipt r : lot.getReceipts()) {
@@ -105,6 +118,18 @@ public class FileParkingRepository implements ParkingRepository {
                     case "COUNTER":
                         lot.setTicketCounter(Integer.parseInt(p[1]));
                         break;
+                    case "RESCOUNTER":
+                        lot.setReservationCounter(Integer.parseInt(p[1]));
+                        break;
+                    case "RESERVATION": {
+                        ParkingSlot held = lot.findSlot(p[4]);
+                        if (held == null) {
+                            throw new IllegalArgumentException("unknown slot " + p[4]);
+                        }
+                        lot.restoreReservation(new Reservation(p[1], p[2], p[3], held,
+                                LocalDateTime.parse(p[5]), LocalDateTime.parse(p[6])));
+                        break;
+                    }
                     case "SLOT":
                         if (!slotsReplaced) {
                             lot.clearSlots();

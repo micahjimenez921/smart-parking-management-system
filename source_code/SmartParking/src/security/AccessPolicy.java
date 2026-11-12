@@ -46,6 +46,7 @@ public class AccessPolicy {
     public static AccessPolicy standard() {
         return new AccessPolicy()
                 .publicPath("/api/login")
+                .publicPath("/api/register")
                 .anyLoggedIn("/api/logout")
                 .anyLoggedIn("/api/me")
                 .anyLoggedIn("/api/password")

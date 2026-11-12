@@ -20,3 +20,22 @@
 .login-card .form { margin-top: 22px; }
 
 .login-card .form-msg { margin-bottom: 4px; }
+
+.login-switch {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link-button:hover { text-decoration: underline; }

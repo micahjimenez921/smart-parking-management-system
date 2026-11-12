@@ -16,8 +16,8 @@
         <span class="brand-name">SmartPark</span>
       </div>
 
-      <h1>Sign in</h1>
-      <p class="muted login-lead">Use your SmartPark account to continue.</p>
+      <h1 id="login-title">Sign in</h1>
+      <p class="muted login-lead" id="login-lead">Use your SmartPark account to continue.</p>
 
       <form id="login-form" class="form" novalidate>
         <label class="field">
@@ -33,6 +33,37 @@
         <div class="form-msg" id="login-msg" role="alert" hidden></div>
         <button class="btn" id="login-submit" type="submit">Sign in</button>
       </form>
+
+      <form id="register-form" class="form" novalidate hidden>
+        <label class="field">
+          <span>Full name</span>
+          <input id="reg-name" type="text" autocomplete="name">
+        </label>
+        <label class="field">
+          <span>Username</span>
+          <input id="reg-username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="letters, numbers, . _ -">
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input id="reg-password" type="password" autocomplete="new-password" placeholder="at least 8 characters">
+        </label>
+        <label class="field">
+          <span>Repeat the password</span>
+          <input id="reg-again" type="password" autocomplete="new-password">
+        </label>
+        <label class="field">
+          <span>Plate number (optional)</span>
+          <input id="reg-plate" type="text" autocomplete="off" maxlength="12" placeholder="e.g. ABC 123">
+        </label>
+
+        <div class="form-msg" id="register-msg" role="alert" hidden></div>
+        <button class="btn" id="register-submit" type="submit">Create account</button>
+      </form>
+
+      <p class="login-switch">
+        <span id="switch-text">New driver?</span>
+        <button type="button" class="link-button" id="switch-button">Create a driver account</button>
+      </p>
 
     </div>
   </main>

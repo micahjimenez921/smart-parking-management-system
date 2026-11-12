@@ -5,6 +5,7 @@ import api.AuthApi;
 import api.DriverApi;
 import api.ParkingApi;
 import api.SettingsApi;
+import api.UserApi;
 import api.WebServer;
 import security.AccessPolicy;
 import security.PasswordHasher;
@@ -83,6 +84,7 @@ public class WebMain {
         WebServer server = new WebServer(8080, webRoot);
         server.setGuard(guard);
         new AuthApi(auth, directory, userRepository, guard).register(server);
+        new UserApi(auth, directory, userRepository, guard).register(server);
         new DriverApi(lot, repository, directory, userRepository, guard).register(server);
         new ParkingApi(lot, repository).register(server);
         new SettingsApi(lot, repository).register(server);

@@ -12,10 +12,11 @@ const VIEW_PERMISSION = {
   tickets: "TICKETS",
   reports: "REPORTS",
   settings: "SETTINGS",
+  users: "USERS",
   driver: "SELF_SERVICE",
   account: null
 };
-const VIEW_ORDER = ["dashboard", "entry", "exit", "tickets", "reports", "settings", "driver", "account"];
+const VIEW_ORDER = ["dashboard", "entry", "exit", "tickets", "reports", "settings", "users", "driver", "account"];
 const VIEW_LABEL = {
   dashboard: "Dashboard",
   entry: "Vehicle entry",
@@ -23,6 +24,7 @@ const VIEW_LABEL = {
   tickets: "Tickets",
   reports: "Reports",
   settings: "Settings",
+  users: "Users",
   driver: "My vehicles"
 };
 
@@ -128,6 +130,7 @@ function applySession() {
   loadCurrentPage();
   if (currentView() === "settings") loadSettingsPage();
   loadDriverPage(true);
+  startUsersPage();
 }
 
 /* ---------- My account page ---------- */

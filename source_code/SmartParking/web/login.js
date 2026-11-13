@@ -18,28 +18,6 @@ try {
   document.documentElement.dataset.theme = "light";
 }
 
-/* ---------- color dots: the page and the 3D scene share one accent ---------- */
-
-const swatches = Array.from(document.querySelectorAll(".swatch"));
-
-function setAccent(name, save) {
-  if (!swatches.some(dot => dot.dataset.accent === name)) name = "teal";
-  document.documentElement.dataset.accent = name;
-  swatches.forEach(dot => dot.setAttribute("aria-checked", String(dot.dataset.accent === name)));
-  if (save) {
-    try { localStorage.setItem("smartpark-login-accent", name); } catch (error) { /* private window */ }
-  }
-  window.dispatchEvent(new CustomEvent("smartpark:accent"));
-}
-
-swatches.forEach(dot => dot.addEventListener("click", () => setAccent(dot.dataset.accent, true)));
-
-try {
-  setAccent(localStorage.getItem("smartpark-login-accent") || "teal", false);
-} catch (error) {
-  setAccent("teal", false);
-}
-
 async function signIn(event) {
   event.preventDefault();
   showMessage("");

@@ -46,13 +46,8 @@ const CAR_L = 3.5, CAR_W = 1.7, WHEELBASE = 2.2;
 
 /* ---------- colors ---------- */
 
-const ACCENTS = { blue: 0x2f6df6, green: 0x3cc46a, teal: 0x1cc5b8, graphite: 0x2c2f32 };
-function accentColor() {
-  const root = document.documentElement;
-  const name = root.dataset.accent;
-  if (name === "graphite" && root.dataset.theme === "dark") return 0x9aa0a4;
-  return ACCENTS[name] || ACCENTS.teal;
-}
+const ACCENT = 0x2f6df6;   // the sign-in page uses blue only
+function accentColor() { return ACCENT; }
 
 const M = {
   white: new THREE.MeshStandardMaterial({ color: 0xf3f4f3, roughness: 0.55 }),

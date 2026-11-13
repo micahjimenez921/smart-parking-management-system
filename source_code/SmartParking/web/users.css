@@ -71,3 +71,23 @@
 #view-users .flow-grid { grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); }
 #users-list .btn-small { padding: 5px 9px; font-size: 12px; white-space: nowrap; }
 #users-list .users-actions { gap: 6px; }
+
+/* icon-only action buttons */
+#users-list .btn-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+}
+#users-list .btn-icon .ico { width: 17px; height: 17px; }
+#users-list .btn-icon:hover { background: var(--primary-soft); }
+#users-list .btn-icon.danger { border-color: var(--busy); color: var(--busy); }
+#users-list .btn-icon.danger:hover { background: var(--busy-soft); }
+#users-list .btn-icon.confirming { background: var(--busy); color: #fff; }
+#users-list .btn-icon:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

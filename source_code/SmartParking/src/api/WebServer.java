@@ -65,6 +65,8 @@ public class WebServer {
         if (name.endsWith(".json")) return "application/json; charset=utf-8";
         if (name.endsWith(".svg"))  return "image/svg+xml";
         if (name.endsWith(".png"))  return "image/png";
+        if (name.endsWith(".woff2")) return "font/woff2";
+        if (name.endsWith(".woff")) return "font/woff";
         return "application/octet-stream";
     }
 

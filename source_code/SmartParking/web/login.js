@@ -18,6 +18,28 @@ try {
   document.documentElement.dataset.theme = "light";
 }
 
+/* ---------- color dots: the page and the 3D scene share one accent ---------- */
+
+const swatches = Array.from(document.querySelectorAll(".swatch"));
+
+function setAccent(name, save) {
+  if (!swatches.some(dot => dot.dataset.accent === name)) name = "teal";
+  document.documentElement.dataset.accent = name;
+  swatches.forEach(dot => dot.setAttribute("aria-checked", String(dot.dataset.accent === name)));
+  if (save) {
+    try { localStorage.setItem("smartpark-login-accent", name); } catch (error) { /* private window */ }
+  }
+  window.dispatchEvent(new CustomEvent("smartpark:accent"));
+}
+
+swatches.forEach(dot => dot.addEventListener("click", () => setAccent(dot.dataset.accent, true)));
+
+try {
+  setAccent(localStorage.getItem("smartpark-login-accent") || "teal", false);
+} catch (error) {
+  setAccent("teal", false);
+}
+
 async function signIn(event) {
   event.preventDefault();
   showMessage("");
@@ -82,12 +104,14 @@ function showMode(createAccount) {
   registering = createAccount;
   form.hidden = createAccount;
   registerForm.hidden = !createAccount;
-  document.getElementById("login-title").textContent = createAccount ? "Create a driver account" : "Sign in";
+  document.getElementById("stage").dataset.mode = createAccount ? "register" : "signin";
+  document.getElementById("login-title").textContent = createAccount ? "New\nDriver" : "Smart\nParking";
   document.getElementById("login-lead").textContent = createAccount
-    ? "Park, see your fee, and pay online. Staff accounts are made by an administrator."
-    : "Use your SmartPark account to continue.";
-  document.getElementById("switch-text").textContent = createAccount ? "Already have an account?" : "New driver?";
-  document.getElementById("switch-button").textContent = createAccount ? "Sign in" : "Create a driver account";
+    ? "Make an account to park, see your fee and pay online."
+    : "Sign in to see open bays, your reservations and what you owe.";
+  document.getElementById("switch-text").textContent = createAccount ? "Already registered?" : "New driver?";
+  document.getElementById("switch-button").textContent = createAccount ? "Sign in" : "Create account";
+  document.title = (createAccount ? "Create account" : "Sign in") + " - SmartPark";
   showMessage("");
   showRegisterMessage("");
   document.getElementById(createAccount ? "reg-name" : "login-username").focus();

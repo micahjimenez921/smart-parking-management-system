@@ -54,6 +54,9 @@ public class WebAccessTests {
         Path web = Files.createDirectories(folder.resolve("web"));
         Files.writeString(web.resolve("login.html"), "<html>login page</html>");
         Files.writeString(web.resolve("index.html"), "<html>app</html>");
+        Files.createDirectories(web.resolve("vendor").resolve("fonts"));
+        Files.write(web.resolve("vendor").resolve("fonts").resolve("test.woff"), new byte[] {1, 2, 3});
+        Files.write(web.resolve("vendor").resolve("fonts").resolve("test.woff2"), new byte[] {1, 2, 3});
 
         ParkingLot lot = DemoData.createEmptyLot();
         FileParkingRepository lotRepository = new FileParkingRepository(folder.resolve("lot.txt"));
@@ -118,6 +121,10 @@ public class WebAccessTests {
         checkEquals("the login page can be opened without signing in", 200, call("GET", "/login.html", null, null).status);
         checkEquals("the main page file can be opened (it sends visitors to the login page itself)",
                 200, call("GET", "/index.html", null, null).status);
+        checkEquals("a font file for the login page is served without signing in", 200,
+                call("GET", "/vendor/fonts/test.woff", null, null).status);
+        checkEquals("a .woff file is sent as a font", "font/woff", contentTypeOf("/vendor/fonts/test.woff"));
+        checkEquals("a .woff2 file is sent as a font", "font/woff2", contentTypeOf("/vendor/fonts/test.woff2"));
         checkEquals("the dashboard numbers need a sign-in", 401, call("GET", "/api/stats", null, null).status);
         checkEquals("the slot list needs a sign-in", 401, call("GET", "/api/slots", null, null).status);
         checkEquals("parking a vehicle needs a sign-in", 401, call("POST", "/api/park", null, "plate=AB1").status);
@@ -239,6 +246,12 @@ public class WebAccessTests {
         String body = "username=" + java.net.URLEncoder.encode(username, StandardCharsets.UTF_8)
                 + "&password=" + java.net.URLEncoder.encode(password, StandardCharsets.UTF_8);
         return call("POST", "/api/login", null, body);
+    }
+
+    private static String contentTypeOf(String path) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(base + path)).timeout(Duration.ofSeconds(10)).build();
+        return client.send(request, HttpResponse.BodyHandlers.discarding())
+                .headers().firstValue("Content-Type").orElse("");
     }
 
     private static Reply call(String method, String path, String cookie, String body) throws Exception {

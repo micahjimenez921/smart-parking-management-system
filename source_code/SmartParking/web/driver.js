@@ -1,11 +1,11 @@
 /* Driver page: my parked vehicles, paying, my plate numbers, and my recent payments.
    Uses helpers from app.js (make, row, money, formatEntry, getJson, currentView) and
-   from flows.js (postForm, setMessage, markChoice, plainRow, PAY_DETAIL, METHOD_LABEL, ICON_CHECK). */
+   from flows.js (postForm, setMessage, markChoice, plainRow, METHOD_LABEL, ICON_CHECK, and buildCheckout from checkout.js). */
 
-const driverState = { data: null, paying: null, method: "CARD", receipt: null, query: "" };
+const driverState = { data: null, paying: null, receipt: null, query: "" };
 
-/* drivers pay by card or online; cash is taken by the attendant */
-const DRIVER_METHODS = ["CARD", "ONLINE"];
+/* drivers pay by card, GCash, or PayMaya; cash is taken by the attendant */
+const DRIVER_METHODS = ["CARD", "GCASH", "PAYMAYA"];
 
 async function loadDriverPage(force) {
   if (!canUse("SELF_SERVICE")) return;
@@ -124,10 +124,7 @@ function driverTicketBlock(ticket) {
     pay.setAttribute("type", "button");
     pay.addEventListener("click", () => {
       driverState.paying = ticket.ticketId;
-      driverState.method = "CARD";
       renderDriverParked();
-      const detail = document.getElementById("driver-pay-detail");
-      if (detail) detail.focus();
     });
     box.appendChild(pay);
   }
@@ -135,91 +132,31 @@ function driverTicketBlock(ticket) {
 }
 
 function driverPayForm(ticket) {
-  const form = make("form", "form my-pay");
-  form.setAttribute("autocomplete", "off");
-
-  const methodField = make("div", "field");
-  methodField.appendChild(make("span", "", "Payment method"));
-  const choices = make("div", "choices");
-  for (const key of DRIVER_METHODS) {
-    const button = make("button", "choice");
-    button.setAttribute("type", "button");
-    button.dataset.value = key;
-    button.appendChild(make("b", "", METHOD_LABEL[key]));
-    choices.appendChild(button);
-  }
-  methodField.appendChild(choices);
-  form.appendChild(methodField);
-
-  const input = make("input");
-  input.id = "driver-pay-detail";
-  input.setAttribute("type", "text");
-  input.setAttribute("inputmode", "numeric");
-  const detailLabel = make("label", "field");
-  const detailText = make("span", "", "");
-  detailLabel.appendChild(detailText);
-  detailLabel.appendChild(input);
-  form.appendChild(detailLabel);
-
-  const message = make("div", "form-msg");
-  message.id = "driver-pay-msg";
-  message.hidden = true;
-  form.appendChild(message);
-
-  const submit = make("button", "btn", "Pay " + money(ticket.fee));
-  submit.setAttribute("type", "submit");
-  form.appendChild(submit);
-
-  const cancel = make("button", "btn-ghost", "Cancel");
-  cancel.setAttribute("type", "button");
-  cancel.addEventListener("click", () => {
-    driverState.paying = null;
-    renderDriverParked();
+  return buildCheckout({
+    methods: DRIVER_METHODS,
+    summaryTitle: "Your parking fee",
+    rows: [
+      ["Vehicle", ticket.plate],
+      ["Slot", ticket.slotId],
+      ["Hours charged", String(ticket.hours)]
+    ],
+    total: ticket.fee,
+    totalLabel: "Total due",
+    cancel: () => {
+      driverState.paying = null;
+      renderDriverParked();
+    },
+    onPay: async (method, detail) => {
+      driverState.receipt = await postForm("/api/my/pay", {
+        ticketId: ticket.ticketId,
+        method: method,
+        detail: detail
+      });
+      driverState.paying = null;
+      renderDriverParked();
+      loadDriverPage(true);
+    }
   });
-  form.appendChild(cancel);
-
-  function updateDetail() {
-    const info = PAY_DETAIL[driverState.method];
-    detailText.textContent = info.label;
-    input.setAttribute("placeholder", info.hint);
-    input.value = "";
-  }
-
-  for (const button of choices.querySelectorAll(".choice")) {
-    button.addEventListener("click", () => {
-      driverState.method = button.dataset.value;
-      markChoice(choices, driverState.method);
-      updateDetail();
-      setMessage(message, "", "");
-    });
-  }
-  markChoice(choices, driverState.method);
-  updateDetail();
-
-  form.addEventListener("submit", event => {
-    event.preventDefault();
-    submitDriverPayment(ticket, input.value, message, submit);
-  });
-  return form;
-}
-
-async function submitDriverPayment(ticket, detail, message, submit) {
-  setMessage(message, "", "");
-  submit.disabled = true;
-
-  try {
-    driverState.receipt = await postForm("/api/my/pay", {
-      ticketId: ticket.ticketId,
-      method: driverState.method,
-      detail: detail
-    });
-    driverState.paying = null;
-    renderDriverParked();
-    loadDriverPage(true);
-  } catch (error) {
-    setMessage(message, error.message, "error");
-    submit.disabled = false;
-  }
 }
 
 function renderDriverReceipt(card, receipt) {

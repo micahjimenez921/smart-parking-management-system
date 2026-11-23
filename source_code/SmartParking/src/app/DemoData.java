@@ -45,7 +45,7 @@ public class DemoData {
     private static void addSampleHistory(ParkingLot lot) {
         Random random = new Random(42);
         List<ParkingSlot> slots = lot.getSlots();
-        String[] methods = {"CASH", "CASH", "CARD", "CARD", "ONLINE"};
+        String[] methods = {"CASH", "CASH", "CARD", "GCASH", "PAYMAYA"};
         int[] hoursPool = {1, 1, 1, 2, 2, 2, 3, 3, 4, 5, 6};
 
         LocalDateTime now = LocalDateTime.now();

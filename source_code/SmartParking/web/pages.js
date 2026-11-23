@@ -2,8 +2,8 @@
 
 const pageState = { range: 7, receipts: [] };
 
-const METHOD_COLOR = { CASH: "var(--primary)", CARD: "var(--violet)", ONLINE: "var(--teal)" };
-const METHOD_CHIP = { CASH: "type-regular", CARD: "type-vip", ONLINE: "type-handicapped" };
+const METHOD_COLOR = { CASH: "var(--primary)", CARD: "var(--violet)", GCASH: "#38a3f5", PAYMAYA: "#22c55e", ONLINE: "var(--teal)" };
+const METHOD_CHIP = { CASH: "type-regular", CARD: "type-vip", GCASH: "pay-gcash", PAYMAYA: "pay-maya", ONLINE: "type-handicapped" };
 
 /* ---------- helpers ---------- */
 

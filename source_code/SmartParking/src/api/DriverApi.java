@@ -24,9 +24,19 @@ import java.util.Map;
 
 /**
  * The driver's own addresses. A driver only ever sees and pays tickets whose plate number is on their own account,
- * and can pay by card or online (cash is taken by the attendant).
+ * and can pay by card, GCash, or PayMaya (cash is taken by the attendant).
  */
 public class DriverApi {
+    /** How a payment method is written in a message. */
+    private static String methodLabel(String name) {
+        switch (name) {
+            case "GCASH": return "GCash";
+            case "PAYMAYA": return "PayMaya";
+            case "CARD": return "card";
+            default: return name.toLowerCase();
+        }
+    }
+
     private static final int RECENT_PAYMENTS = 10;
 
     private final ParkingLot lot;
@@ -108,8 +118,9 @@ public class DriverApi {
         String ticketId = form.getOrDefault("ticketId", "").trim().toUpperCase();
         String methodName = form.getOrDefault("method", "");
 
-        if (!"CARD".equals(methodName) && !"ONLINE".equals(methodName)) {
-            sendError(exchange, 400, "Drivers can pay by card or online. To pay cash, see the attendant.");
+        if (!"CARD".equals(methodName) && !"GCASH".equals(methodName) && !"PAYMAYA".equals(methodName)
+                && !"ONLINE".equals(methodName)) {
+            sendError(exchange, 400, "Drivers can pay by card, GCash, or PayMaya. To pay cash, see the attendant.");
             return;
         }
 
@@ -124,7 +135,7 @@ public class DriverApi {
             Receipt receipt = lot.checkout(ticketId, method);
             persistLot();
             lot.getEvents().record(service.EventLog.STAFF, "info", "Online payment",
-                    "A driver paid PHP " + String.format("%.2f", receipt.getAmount()) + " by " + receipt.getMethodName().toLowerCase()
+                    "A driver paid PHP " + String.format("%.2f", receipt.getAmount()) + " by " + methodLabel(receipt.getMethodName())
                             + " for " + receipt.getPlateNumber() + " (ticket " + receipt.getTicketId() + ").");
             lot.getEvents().record(driver.getId(), "info", "Payment received",
                     "Your payment for " + receipt.getPlateNumber() + " was received. The exit gate is open.");

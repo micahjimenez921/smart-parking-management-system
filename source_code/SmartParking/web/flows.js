@@ -1,10 +1,10 @@
 /* Vehicle entry and exit pages. Uses helpers from app.js. */
 
 const entryState = { vehicleType: "CAR", slotType: "REGULAR", ticket: null };
-const exitState = { ticket: null, method: "CASH", receipt: null, lost: false };
+const exitState = { ticket: null, receipt: null, lost: false };
 
 const SLOT_TYPES = ["REGULAR", "HANDICAPPED", "VIP"];
-const METHOD_LABEL = { CASH: "Cash", CARD: "Card", ONLINE: "Online" };
+const METHOD_LABEL = { CASH: "Cash", CARD: "Card (Visa)", GCASH: "GCash", PAYMAYA: "PayMaya", ONLINE: "Online" };
 
 const ICON_CHECK =
   '<svg class="ico" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -173,12 +173,6 @@ async function submitEntry(event) {
 
 /* ---------- exit and payment ---------- */
 
-const PAY_DETAIL = {
-  CASH: { label: "Cash tendered", hint: "Amount handed over, e.g. 100" },
-  CARD: { label: "Card number", hint: "16 digits" },
-  ONLINE: { label: "Mobile number", hint: "11 digits" }
-};
-
 function renderExit() {
   renderExitSummary();
   renderPayCard();
@@ -224,65 +218,18 @@ function renderPayCard() {
 
   card.appendChild(make("h2", "", "Payment"));
 
-  const form = make("form", "form");
-  form.setAttribute("autocomplete", "off");
+  const t = exitState.ticket;
+  const rows = [["Hours charged", String(t.hours)]];
+  if (t.rate !== undefined) rows.push(["Rate", money(t.rate) + " / hour"]);
+  if (t.lostTicket) rows.push(["Lost ticket penalty", money(t.penalty)]);
 
-  const methodField = make("div", "field");
-  methodField.appendChild(make("span", "", "Payment method"));
-  const choices = make("div", "choices");
-  choices.id = "pay-methods";
-  for (const key of Object.keys(METHOD_LABEL)) {
-    const button = make("button", "choice");
-    button.setAttribute("type", "button");
-    button.dataset.value = key;
-    button.appendChild(make("b", "", METHOD_LABEL[key]));
-    choices.appendChild(button);
-  }
-  methodField.appendChild(choices);
-  form.appendChild(methodField);
-
-  const input = make("input");
-  input.id = "pay-detail";
-  input.setAttribute("type", "text");
-  const detailLabel = make("label", "field");
-  const detailText = make("span", "", "");
-  detailLabel.appendChild(detailText);
-  detailLabel.appendChild(input);
-  form.appendChild(detailLabel);
-
-  const message = make("div", "form-msg");
-  message.id = "pay-msg";
-  message.hidden = true;
-  form.appendChild(message);
-
-  const pay = make("button", "btn", "Pay and exit");
-  pay.setAttribute("type", "submit");
-  form.appendChild(pay);
-
-  function updateDetail() {
-    const info = PAY_DETAIL[exitState.method];
-    detailText.textContent = info.label;
-    input.setAttribute("placeholder", info.hint);
-    input.value = "";
-  }
-
-  for (const button of choices.querySelectorAll(".choice")) {
-    button.addEventListener("click", () => {
-      exitState.method = button.dataset.value;
-      markChoice(choices, exitState.method);
-      updateDetail();
-      setMessage(message, "", "");
-    });
-  }
-  markChoice(choices, exitState.method);
-  updateDetail();
-
-  form.addEventListener("submit", event => {
-    event.preventDefault();
-    submitPayment(input.value, message);
-  });
-
-  card.appendChild(form);
+  card.appendChild(buildCheckout({
+    methods: ["CASH", "CARD", "GCASH", "PAYMAYA"],
+    rows: rows,
+    total: t.fee,
+    totalLabel: t.lostTicket ? "Total due, with penalty" : "Total due",
+    onPay: (method, detail) => submitPayment(method, detail)
+  }));
 }
 
 function renderReceipt(card, receipt) {
@@ -302,8 +249,6 @@ function renderReceipt(card, receipt) {
   plainRow(rows, "Method", METHOD_LABEL[receipt.method] || receipt.method);
   plainRow(rows, "Amount paid", money(receipt.amount));
   if (receipt.change > 0) plainRow(rows, "Change", money(receipt.change));
-  plainRow(rows, "Paid at", formatEntry(receipt.time));
-  card.appendChild(rows);
   plainRow(rows, "Paid at", formatEntry(receipt.time));
   card.appendChild(rows);
 
@@ -358,21 +303,17 @@ async function lookupTicket(rawId) {
   renderExit();
 }
 
-async function submitPayment(detail, message) {
-  setMessage(message, "", "");
-  try {
-    exitState.receipt = await postForm("/api/checkout", {
-      ticketId: exitState.ticket.ticketId,
-      method: exitState.method,
-      detail: detail,
-      lost: exitState.lost ? "true" : "false"
-    });
-    exitState.ticket = null;
-    renderExit();
-    await refresh();
-  } catch (error) {
-    setMessage(message, error.message, "error");
-  }
+/* throws when the payment is refused, so the checkout can show the message */
+async function submitPayment(method, detail) {
+  exitState.receipt = await postForm("/api/checkout", {
+    ticketId: exitState.ticket.ticketId,
+    method: method,
+    detail: detail,
+    lost: exitState.lost ? "true" : "false"
+  });
+  exitState.ticket = null;
+  renderExit();
+  await refresh();
 }
 
 function setLostMode(on) {

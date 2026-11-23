@@ -1,0 +1,194 @@
+/* Checkout (payment screen). Uses the colors from style.css so it follows light and dark mode. */
+
+.checkout-wrap { container-type: inline-size; }
+
+.checkout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+  gap: 24px;
+  margin-top: 12px;
+  align-items: start;
+}
+
+@container (max-width: 640px) {
+  .checkout { grid-template-columns: 1fr; }
+}
+
+.co-title { margin: 0 0 12px; font-size: 14px; font-weight: 700; }
+
+/* ---------- method tiles ---------- */
+
+.co-methods {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 10px;
+}
+
+.co-method {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 84px;
+  padding: 12px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.co-method:hover { background: var(--hover); }
+.co-method.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: 0 0 0 1px var(--primary) inset;
+}
+.co-method:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.co-method-name { font-size: 12px; font-weight: 600; color: var(--text); }
+
+.co-mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 56px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+.co-cash { background: var(--free-soft); color: var(--free); }
+.co-cash .ico { width: 20px; height: 20px; }
+.co-visa { background: #1a1f71; color: #ffffff; font-style: italic; letter-spacing: 0.04em; }
+.co-gcash { background: #007cff; color: #ffffff; letter-spacing: -0.01em; }
+.co-maya { background: #00b14f; color: #ffffff; letter-spacing: -0.01em; }
+
+/* ---------- details ---------- */
+
+.co-details { margin-top: 18px; }
+.co-panel { display: grid; gap: 14px; }
+
+.co-field { display: grid; gap: 6px; margin: 0; }
+.co-field > span { font-size: 12px; font-weight: 600; color: var(--muted); }
+.co-field small { font-size: 12px; color: var(--muted); }
+.co-field input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.co-field input:focus { outline: 2px solid var(--primary); outline-offset: 0; border-color: transparent; }
+
+.co-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.co-prefix { position: relative; }
+.co-prefix b {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+}
+.co-prefix input { padding-left: 34px; }
+
+.co-quick { display: flex; flex-wrap: wrap; gap: 8px; }
+.co-chip {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.co-chip:hover { background: var(--hover); }
+.co-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.co-change { min-height: 20px; font-size: 13px; font-weight: 600; }
+.co-change.ok { color: var(--free); }
+.co-change.short { color: var(--busy); }
+
+.co-wallet-note { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+
+/* the little card that fills in as you type */
+.co-card-preview {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1f2a6b 0%, #2563eb 100%);
+  color: #ffffff;
+  max-width: 340px;
+}
+.co-chip-art {
+  width: 34px;
+  height: 24px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #f5d98a, #c9a24a);
+}
+.co-card-brand {
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+.co-card-number { font-size: 17px; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.co-card-bottom { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; letter-spacing: 0.05em; }
+.co-card-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- summary ---------- */
+
+.co-summary {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg, var(--hover));
+}
+
+.co-lines { display: grid; gap: 10px; }
+.co-line { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.co-line span { color: var(--muted); }
+.co-line b { text-align: right; font-weight: 600; }
+
+.co-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+.co-total span { font-weight: 600; }
+.co-total b { font-size: 24px; font-weight: 800; }
+
+.co-summary .form-msg { margin-top: 12px; }
+.co-pay { width: 100%; margin-top: 14px; }
+.co-summary .btn-ghost { width: 100%; margin-top: 8px; }
+.co-note { margin: 12px 0 0; font-size: 12px; color: var(--muted); text-align: center; }
+
+/* ---------- payment method chips in tables and charts ---------- */
+
+.type-chip.pay-gcash { background: #dbeeff; color: #0a64c8; }
+.type-chip.pay-maya { background: #dcf8e6; color: #12803d; }
+:root[data-theme="dark"] .type-chip.pay-gcash { background: #12304f; color: #7cc0ff; }
+:root[data-theme="dark"] .type-chip.pay-maya { background: #0f3320; color: #6fe3a0; }
+
+/* ---------- the Exit and payment page: ticket details on the left, checkout on the right ---------- */
+
+#view-exit .flow-grid { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); }
+@media (max-width: 1000px) {
+  #view-exit .flow-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .co-method { transition: none; }
+}

@@ -19,6 +19,13 @@ public class PaymentFactory {
         if ("CARD".equals(method)) {
             return new CardPayment(text.replaceAll("[\\s-]", ""));
         }
+        if ("GCASH".equals(method)) {
+            return new GCashPayment(text.replaceAll("[\\s-]", ""));
+        }
+        if ("PAYMAYA".equals(method)) {
+            return new PayMayaPayment(text.replaceAll("[\\s-]", ""));
+        }
+        // kept so payments saved before GCash and PayMaya were added can still be read
         if ("ONLINE".equals(method)) {
             return new OnlinePayment(text.replaceAll("[\\s-]", ""));
         }

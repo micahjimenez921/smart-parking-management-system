@@ -203,10 +203,14 @@ public class DriverApiTests {
 
         Reply eveSees = call("GET", "/api/my/ticket", eve, null);
         check("Dee's payment does not show in Eve's history", !eveSees.body.contains("ABC 123"));
-        checkEquals("Eve pays online with an 11 digit mobile number", 200,
-                call("POST", "/api/my/pay", eve, form("ticketId", eveCar.getTicketId(), "method", "ONLINE", "detail", "09171234567")).status);
+        checkEquals("Eve pays with GCash and an 11 digit mobile number", 200,
+                call("POST", "/api/my/pay", eve, form("ticketId", eveCar.getTicketId(), "method", "GCASH", "detail", "09171234567")).status);
         checkEquals("a mobile number with the wrong length is refused", 400,
-                call("POST", "/api/my/pay", dee, form("ticketId", deeVan.getTicketId(), "method", "ONLINE", "detail", "0917")).status);
+                call("POST", "/api/my/pay", dee, form("ticketId", deeVan.getTicketId(), "method", "GCASH", "detail", "0917")).status);
+        checkEquals("a PayMaya number that does not start with 09 is refused", 400,
+                call("POST", "/api/my/pay", dee, form("ticketId", deeVan.getTicketId(), "method", "PAYMAYA", "detail", "18171234567")).status);
+        checkEquals("a driver cannot pay cash", 400,
+                call("POST", "/api/my/pay", dee, form("ticketId", deeVan.getTicketId(), "method", "CASH", "detail", "500")).status);
     }
 
     private static void plateTests(UserDirectory directory) throws Exception {

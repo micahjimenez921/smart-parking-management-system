@@ -508,6 +508,22 @@ public class ParkingTests {
         pass("online payment with 11 digits succeeds");
 
         checkEquals("card and online give no change", 0.0, new CardPayment("1").getChange(10));
+
+        new GCashPayment("09171234567").pay(10);
+        pass("GCash with an 11 digit number starting with 09 succeeds");
+        new PayMayaPayment("09171234567").pay(10);
+        pass("PayMaya with an 11 digit number starting with 09 succeeds");
+        checkThrows("GCash with 10 digits fails", PaymentFailedException.class,
+                () -> new GCashPayment("0917123456").pay(10));
+        checkThrows("PayMaya with a number not starting with 09 fails", PaymentFailedException.class,
+                () -> new PayMayaPayment("18171234567").pay(10));
+        checkThrows("the GCash message names GCash", PaymentFailedException.class,
+                () -> new GCashPayment("").pay(10));
+        checkEquals("GCash method name", "GCASH", new GCashPayment("09171234567").getMethodName());
+        checkEquals("PayMaya method name", "PAYMAYA", new PayMayaPayment("09171234567").getMethodName());
+        check("both wallets share the EWalletPayment base class",
+                new GCashPayment("1") instanceof EWalletPayment && new PayMayaPayment("1") instanceof EWalletPayment);
+        checkEquals("wallets give no change", 0.0, new GCashPayment("1").getChange(10));
     }
 
     /* ---------- factories ---------- */
@@ -524,6 +540,10 @@ public class ParkingTests {
         PaymentFactory.create("CARD", "1234 5678-9012 3456").pay(1);
         pass("card numbers typed with spaces and dashes are accepted");
         check("PaymentFactory builds online", PaymentFactory.create("ONLINE", "09171234567") instanceof OnlinePayment);
+        check("PaymentFactory builds GCash", PaymentFactory.create("GCASH", "0917 123-4567") instanceof GCashPayment);
+        check("PaymentFactory builds PayMaya", PaymentFactory.create("PAYMAYA", "09171234567") instanceof PayMayaPayment);
+        PaymentFactory.create("GCASH", "0917 123-4567").pay(1);
+        pass("a GCash number typed with spaces and dashes is accepted");
         checkThrows("PaymentFactory rejects an unknown method", IllegalArgumentException.class,
                 () -> PaymentFactory.create("CHEQUE", "1"));
         checkThrows("cash amount that is not a number is rejected", IllegalArgumentException.class,

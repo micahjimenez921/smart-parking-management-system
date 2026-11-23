@@ -27,11 +27,10 @@ Drivers can register themselves on the sign-in page. Staff accounts can only be 
 ## Objectives
 
 1. Apply OOP principles in a real-world scenario, for example private slot state, the Vehicle, ParkingSlot and User class hierarchies, and the PaymentMethod and FeeStrategy interfaces.
-2. Design a complete UML model (Use Case, Class, Sequence, Activity) that reflects the implemented system.
-3. Automate parking operations: slot assignment, duration tracking, fee computation, and payment.
-4. Protect data and access: no double-booking of slots, no duplicate plate numbers, payment before a slot is released, hashed passwords, and role-based access.
-5. Keep the architecture modular so real hardware (barrier gates, sensors), real payment gateways, and a database can be added later.
-6. Keep a maintainable codebase with clear separation between entities, services, storage, security, and the web API.
+2. Automate parking operations: slot assignment, duration tracking, fee computation, and payment.
+3. Protect data and access: no double-booking of slots, no duplicate plate numbers, payment before a slot is released, hashed passwords, and role-based access.
+4. Keep the architecture modular so real hardware (barrier gates, sensors), real payment gateways, and a database can be added later.
+5. Keep a maintainable codebase with clear separation between entities, services, storage, security, and the web API.
 
 ---
 

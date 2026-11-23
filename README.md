@@ -18,7 +18,7 @@ Every person signs in with their own account. What they see depends on their rol
 |---|---|
 | Administrator | Everything an attendant can do, plus change prices and slots on the Settings page and manage accounts on the Users page |
 | Parking Attendant | Operate the dashboard: register vehicles, handle exit and payment, view tickets, receipts and reports, and manage reservations |
-| Driver | See their own parked vehicles and the fee so far, pay online, reserve a slot, and save their plate numbers |
+| Driver | See their own parked vehicles and the fee so far, pay by card, GCash, or PayMaya, look back at past payments and receipts, reserve a slot, and save their plate numbers |
 
 Drivers can register themselves on the sign-in page. Staff accounts can only be created by an administrator.
 
@@ -43,7 +43,8 @@ Drivers can register themselves on the sign-in page. Staff accounts can only be 
 - **Ticket generation**: records the entry time and issues a unique ticket. Tickets and receipts can be printed.
 - **Fee calculation**: hourly rates per slot type, with the time rounded up to whole hours. A daily cap (8 hours by default) stops the fee from growing past a set number of hours per day.
 - **Lost tickets**: a vehicle can be found by plate number (ignoring case, spaces, and dashes), and a flat penalty (100 by default) is added to the fee.
-- **Payment**: cash (with change), card, or online. A failed payment keeps the ticket open and the slot occupied so it can be retried.
+- **Payment**: a checkout page like the ones on shopping websites. The attendant can take cash (with change), card (Visa), GCash, or PayMaya, and a summary shows the hours, the rate, and the total. A failed payment keeps the ticket open and the slot occupied so it can be retried. This is a demo checkout: no real money moves and no real payment service is called.
+- **Receipts**: every payment gets a reference number (for example `SP-261123-T005`). Cash receipts show the cash received and the change. A receipt can be printed as an "Official receipt".
 - **Gate simulation**: the entry gate opens when a vehicle is parked, and the exit gate opens only after a successful payment. Gates close after 15 seconds or when the vehicle has passed.
 - **Slot release**: the slot is freed only after exit.
 
@@ -55,12 +56,14 @@ Drivers can register themselves on the sign-in page. Staff accounts can only be 
 - **My account**: every user can change their name and password.
 
 ### Drivers
-- **Driver page**: parked vehicles, the fee so far, online payment, and saved plate numbers.
+- **Driver page**: parked vehicles, the fee so far, payment by card, GCash, or PayMaya (cash is taken by the attendant), and saved plate numbers.
+- **Payment history**: all of the driver's payments with a method filter and pages. A row opens the full receipt, which can be printed.
 - **Reservations**: reserve a free slot for 30 minutes. Unused reservations expire. Attendants can see and cancel them.
 - **Notifications**: the bell in the top bar shows real events, such as reservations and accounts.
 
 ### Management and reports
 - **Settings page (administrator)**: change slot rates, the daily cap, and the lost-ticket penalty, and add or remove parking slots. Everything is saved.
+- **Tickets page**: search the parked vehicles by ticket, plate, or slot and filter them by vehicle type. The payments table can be searched by reference, ticket, plate, or slot, filtered by payment method and date range, and is shown in pages of 10.
 - **Parking map and reports**: a color-coded slot map, plus charts for revenue (7 or 30 days), parking duration, and payment methods.
 - **Data persistence**: parked vehicles, payments, ticket numbers, settings, and accounts are saved to files and restored on startup.
 - **Sign-in page**: an animated 3D parking lot built with the three.js library, which is included in the project so it works offline.
@@ -85,7 +88,7 @@ Drivers can register themselves on the sign-in page. Staff accounts can only be 
 | Concept | Where it appears |
 |---|---|
 | Encapsulation | `ParkingSlot` keeps its occupied state private and changes it only through `occupy()` and `vacate()`. `PasswordHasher` is the only class that touches password hashing. |
-| Inheritance and polymorphism | `Car`, `Motorcycle`, and `Truck` extend `Vehicle`. `RegularSlot`, `HandicappedSlot`, and `VIPSlot` extend `ParkingSlot`. `Administrator`, `ParkingAttendant`, and `Driver` extend `User`, each with its own permissions. |
+| Inheritance and polymorphism | `Car`, `Motorcycle`, and `Truck` extend `Vehicle`. `GCashPayment` and `PayMayaPayment` extend the abstract `EWalletPayment`, while `CashPayment` and `CardPayment` implement `PaymentMethod` directly. `RegularSlot`, `HandicappedSlot`, and `VIPSlot` extend `ParkingSlot`. `Administrator`, `ParkingAttendant`, and `Driver` extend `User`, each with its own permissions. |
 | Abstraction (interfaces) | `PaymentMethod`, `FeeStrategy`, `ParkingRepository`, and `UserRepository` let payments, fee rules, and storage be swapped without changing `ParkingLot`. |
 | Strategy pattern | `FeeStrategy` with `HourlyFee` and `DailyCapFee`. |
 | Decorator-style wrapping | `PenaltyFee` wraps any `FeeStrategy` and adds a flat penalty. |
@@ -108,13 +111,13 @@ smart-parking-management-system/
 │       │   ├── fee/         # fee rules (hourly, daily cap, penalty)
 │       │   ├── gate/        # entry and exit gate simulation
 │       │   ├── model/       # vehicles, slots, tickets, receipts, reservations, factories
-│       │   ├── payment/     # cash, card, and online payment
+│       │   ├── payment/     # cash, card, GCash, and PayMaya payment
 │       │   ├── security/    # access rules, password hashing, sessions
 │       │   ├── service/     # parking lot, sign-in, user directory, event log
 │       │   ├── storage/     # saving and loading to files
 │       │   ├── tests/       # automated tests
 │       │   └── user/        # Administrator, ParkingAttendant, Driver, roles, permissions
-│       └── web/             # pages, styles, scripts; vendor/ holds three.js and fonts
+│       └── web/             # pages, styles, scripts, logo; vendor/ holds three.js and fonts
 ├── data/                    # created when the system runs (not committed)
 ├── UML_diagrams/            # activity, class, sequence, and use case diagrams
 └── .gitignore
@@ -180,14 +183,14 @@ java -cp out tests.ReservationTests
 java -cp out tests.WebAccessTests
 ```
 
-Each program prints the number of checks passed and failed. At the time of writing, all 714 checks pass.
+Each program prints the number of checks passed and failed. At the time of writing, all 732 checks pass.
 
 | Test program | Covers |
 |---|---|
 | `ParkingTests` | Fees, fee rules, lost tickets, gates, slots, payments, factories, settings, saving and loading |
 | `SecurityTests` | Password hashing, sessions, role permissions, lockout |
 | `UserApiTests` | Creating, renaming, resetting, and deleting accounts; self-registration |
-| `DriverApiTests` | The driver page: vehicles, fees, online payment, plate numbers |
+| `DriverApiTests` | The driver page: vehicles, fees, card, GCash and PayMaya payment, payment history, plate numbers |
 | `ReservationTests` | Reserving slots, expiry, notifications |
 | `WebAccessTests` | Which pages need a sign-in, cookie settings, file types |
 

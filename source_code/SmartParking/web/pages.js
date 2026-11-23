@@ -1,6 +1,13 @@
 /* Tickets page and Reports page. Uses helpers from app.js, flows.js and charts.js. */
 
-const pageState = { range: 7, receipts: [] };
+const PAGE_SIZE = 10;
+const pageState = {
+  range: 7,
+  receipts: [],
+  tickets: [],
+  allPayments: [],
+  page: 1
+};
 
 const METHOD_COLOR = { CASH: "var(--primary)", CARD: "var(--violet)", GCASH: "#38a3f5", PAYMAYA: "#22c55e", ONLINE: "var(--teal)" };
 const METHOD_CHIP = { CASH: "type-regular", CARD: "type-vip", GCASH: "pay-gcash", PAYMAYA: "pay-maya", ONLINE: "type-handicapped" };
@@ -45,15 +52,52 @@ function methodChip(method) {
 
 /* ---------- tickets page ---------- */
 
-function renderTickets(tickets) {
+/* Text search that ignores case, spaces and dashes, like the lost-ticket plate search. */
+function squash(text) {
+  return String(text).toLowerCase().replace(/[\s-]/g, "");
+}
+
+function matchesSearch(fields, query) {
+  const wanted = squash(query);
+  if (wanted === "") return true;
+  return fields.some(field => squash(field).includes(wanted));
+}
+
+function filteredTickets() {
+  const query = document.getElementById("tf-search").value;
+  const type = document.getElementById("tf-type").value;
+  return pageState.tickets.filter(t =>
+    (type === "" || t.vehicleType === type) &&
+    matchesSearch([t.ticketId, t.plate, t.slotId, t.owner || ""], query));
+}
+
+function filteredPayments() {
+  const query = document.getElementById("pf-search").value;
+  const method = document.getElementById("pf-method").value;
+  const from = document.getElementById("pf-from").value;
+  const to = document.getElementById("pf-to").value;
+  return pageState.allPayments.filter(r => {
+    const day = r.time.slice(0, 10);
+    return (method === "" || r.method === method) &&
+      (from === "" || day >= from) &&
+      (to === "" || day <= to) &&
+      matchesSearch([r.reference || "", r.ticketId, r.plate, r.slotId], query);
+  });
+}
+
+function renderTickets() {
   const body = document.getElementById("tickets-body");
   body.innerHTML = "";
 
+  const all = pageState.tickets;
+  const tickets = filteredTickets();
+
+  const parked = all.length === 1 ? "1 vehicle parked right now" : all.length + " vehicles parked right now";
   document.getElementById("tickets-count").textContent =
-    tickets.length === 1 ? "1 vehicle parked right now" : tickets.length + " vehicles parked right now";
+    tickets.length === all.length ? parked : "Showing " + tickets.length + " of " + all.length + " parked vehicles";
 
   if (tickets.length === 0) {
-    emptyRow(body, 8, "No vehicles are parked right now.");
+    emptyRow(body, 8, all.length === 0 ? "No vehicles are parked right now." : "No tickets match your search.");
     return;
   }
 
@@ -77,18 +121,89 @@ function renderTickets(tickets) {
   }
 }
 
-function renderPayments(receipts) {
+function anyPaymentFilter() {
+  return ["pf-search", "pf-method", "pf-from", "pf-to"].some(id => document.getElementById(id).value !== "");
+}
+
+/* Page numbers to show: the first, the last, and the pages around the current one. */
+function pageNumbers(current, last) {
+  const wanted = new Set([1, last, current - 1, current, current + 1]);
+  const numbers = [...wanted].filter(n => n >= 1 && n <= last).sort((x, y) => x - y);
+  const result = [];
+  for (let i = 0; i < numbers.length; i++) {
+    if (i > 0 && numbers[i] - numbers[i - 1] > 1) result.push("...");
+    result.push(numbers[i]);
+  }
+  return result;
+}
+
+function renderPager(totalPages) {
+  const pager = document.getElementById("payments-pager");
+  pager.innerHTML = "";
+  pager.hidden = totalPages <= 1;
+  if (totalPages <= 1) return;
+
+  const go = (page) => {
+    pageState.page = page;
+    renderPayments();
+  };
+
+  const prev = make("button", "pager-btn", "Previous");
+  prev.type = "button";
+  prev.disabled = pageState.page === 1;
+  prev.addEventListener("click", () => go(pageState.page - 1));
+  pager.appendChild(prev);
+
+  for (const n of pageNumbers(pageState.page, totalPages)) {
+    if (n === "...") {
+      pager.appendChild(make("span", "pager-gap", "\u2026"));
+      continue;
+    }
+    const button = make("button", "pager-btn" + (n === pageState.page ? " current" : ""), String(n));
+    button.type = "button";
+    if (n === pageState.page) button.setAttribute("aria-current", "page");
+    button.setAttribute("aria-label", "Page " + n);
+    button.addEventListener("click", () => go(n));
+    pager.appendChild(button);
+  }
+
+  const next = make("button", "pager-btn", "Next");
+  next.type = "button";
+  next.disabled = pageState.page === totalPages;
+  next.addEventListener("click", () => go(pageState.page + 1));
+  pager.appendChild(next);
+}
+
+function renderPayments() {
   const body = document.getElementById("payments-body");
   body.innerHTML = "";
 
-  if (receipts.length === 0) {
-    emptyRow(body, 6, "No payments yet.");
+  const all = pageState.allPayments;
+  const matches = filteredPayments();
+  const totalPages = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
+  pageState.page = Math.min(Math.max(1, pageState.page), totalPages);
+
+  const start = (pageState.page - 1) * PAGE_SIZE;
+  const visible = matches.slice(start, start + PAGE_SIZE);
+
+  document.getElementById("pf-clear").disabled = !anyPaymentFilter();
+
+  const filtered = matches.length === all.length ? "" : " (filtered from " + all.length + ")";
+  document.getElementById("payments-count").textContent = matches.length === 0
+    ? (all.length === 0 ? "No payments yet" : "No payments match your filters")
+    : "Showing " + (start + 1) + "\u2013" + (start + visible.length) + " of " + matches.length + " payments" + filtered;
+
+  renderPager(totalPages);
+
+  if (visible.length === 0) {
+    emptyRow(body, 7, all.length === 0 ? "No payments yet." : "No payments match your filters.");
     return;
   }
 
-  for (const r of receipts) {
+  for (const r of visible) {
     const tr = make("tr");
-    cell(tr, r.ticketId, "strong");
+    cell(tr, r.reference || "-", "strong");
+    cell(tr, r.ticketId);
     cell(tr, r.plate);
     cell(tr, r.slotId);
 
@@ -104,14 +219,39 @@ function renderPayments(receipts) {
 
 async function loadTicketsPage() {
   try {
-    const results = await Promise.all([getJson("/api/tickets"), getJson("/api/receipts?limit=10")]);
-    renderTickets(results[0]);
-    renderPayments(results[1]);
+    const results = await Promise.all([getJson("/api/tickets"), getJson("/api/receipts?limit=1000")]);
+    pageState.tickets = results[0];
+    pageState.allPayments = results[1];
+    renderTickets();
+    renderPayments();
   } catch (error) {
     console.error(error);
     document.getElementById("offline").hidden = false;
   }
 }
+
+/* Filters: typing or choosing redraws the table from the data already loaded. */
+for (const id of ["tf-search", "tf-type"]) {
+  const input = document.getElementById(id);
+  input.addEventListener("input", renderTickets);
+  input.addEventListener("change", renderTickets);
+}
+
+for (const id of ["pf-search", "pf-method", "pf-from", "pf-to"]) {
+  const input = document.getElementById(id);
+  const redraw = () => {
+    pageState.page = 1;
+    renderPayments();
+  };
+  input.addEventListener("input", redraw);
+  input.addEventListener("change", redraw);
+}
+
+document.getElementById("pf-clear").addEventListener("click", () => {
+  for (const id of ["pf-search", "pf-method", "pf-from", "pf-to"]) document.getElementById(id).value = "";
+  pageState.page = 1;
+  renderPayments();
+});
 
 /* ---------- reports page ---------- */
 

@@ -1,6 +1,7 @@
 package model;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Receipt {
     private String ticketId;
@@ -34,6 +35,12 @@ public class Receipt {
     public String getMethodName() { return methodName; }
     public double getAmount() { return amount; }
     public LocalDateTime getTime() { return time; }
+
+    /* A short reference number for the receipt, such as SP-261123-T005.
+       It is worked out from the date and the ticket, so older saved receipts get one too. */
+    public String getReference() {
+        return "SP-" + time.format(DateTimeFormatter.ofPattern("yyMMdd")) + "-" + ticketId.replace("-", "");
+    }
 
     @Override
     public String toString() {

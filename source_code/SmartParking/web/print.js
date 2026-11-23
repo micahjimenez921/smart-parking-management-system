@@ -35,21 +35,5 @@ function printTicket(ticket) {
 }
 
 function printReceipt(receipt) {
-  const rows = [
-    { label: "Ticket", value: receipt.ticketId },
-    { label: "Plate number", value: receipt.plate },
-    { label: "Slot", value: receipt.slotId },
-    { label: "Hours charged", value: String(receipt.hours) }
-  ];
-  if (receipt.penalty > 0) {
-    rows.push({ label: "Lost ticket penalty", value: money(receipt.penalty) });
-  }
-  rows.push({ label: "Payment method", value: METHOD_LABEL[receipt.method] || receipt.method });
-  rows.push({ label: "Amount paid", value: money(receipt.amount), strong: true });
-  if (receipt.change > 0) {
-    rows.push({ label: "Change", value: money(receipt.change) });
-  }
-  rows.push({ label: "Paid at", value: formatEntry(receipt.time) });
-
-  printSlip("Parking receipt", rows, "Thank you. Drive safely!");
+  printSlip("Official receipt", receiptLines(receipt), "Thank you. Drive safely! Keep this receipt as your proof of payment.");
 }

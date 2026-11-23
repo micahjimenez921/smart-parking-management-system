@@ -275,6 +275,15 @@
                 <h2>Active tickets</h2>
                 <p class="muted" id="tickets-count">&nbsp;</p>
               </div>
+              <div class="filter-bar">
+                <input class="select filter-search" id="tf-search" type="search" placeholder="Search tickets" aria-label="Search active tickets by ticket, plate or slot">
+                <select class="select" id="tf-type" aria-label="Filter by vehicle type">
+                  <option value="">All vehicles</option>
+                  <option value="CAR">Car</option>
+                  <option value="MOTORCYCLE">Motorcycle</option>
+                  <option value="TRUCK">Truck</option>
+                </select>
+              </div>
             </div>
             <div class="table-wrap">
               <table class="table">
@@ -292,19 +301,36 @@
           <div class="card table-card">
             <div class="card-head">
               <div>
-                <h2>Recent payments</h2>
-                <p class="muted">The 10 most recent checkouts</p>
+                <h2>Payments</h2>
+                <p class="muted" id="payments-count">&nbsp;</p>
+              </div>
+              <div class="filter-bar wide">
+                <input class="select filter-search" id="pf-search" type="search" placeholder="Search payments" aria-label="Search payments by reference, ticket, plate or slot" title="Search by reference, ticket, plate or slot">
+                <select class="select" id="pf-method" aria-label="Filter by payment method">
+                  <option value="">All methods</option>
+                  <option value="CASH">Cash</option>
+                  <option value="CARD">Card (Visa)</option>
+                  <option value="GCASH">GCash</option>
+                  <option value="PAYMAYA">PayMaya</option>
+                  <option value="ONLINE">Online (older)</option>
+                </select>
+                <label class="filter-date"><span>From</span><input class="select" id="pf-from" type="date"></label>
+                <label class="filter-date"><span>To</span><input class="select" id="pf-to" type="date"></label>
+                <button type="button" class="btn-small filter-clear" id="pf-clear" disabled>Clear filters</button>
               </div>
             </div>
             <div class="table-wrap">
               <table class="table">
                 <thead>
                   <tr>
-                    <th>Ticket</th><th>Plate</th><th>Slot</th><th>Method</th><th>Amount</th><th>Paid at</th>
+                    <th>Reference</th><th>Ticket</th><th>Plate</th><th>Slot</th><th>Method</th><th>Amount</th><th>Paid at</th>
                   </tr>
                 </thead>
                 <tbody id="payments-body"></tbody>
               </table>
+            </div>
+            <div class="table-foot">
+              <nav class="pager" id="payments-pager" aria-label="Payments pages" hidden></nav>
             </div>
           </div>
         </section>

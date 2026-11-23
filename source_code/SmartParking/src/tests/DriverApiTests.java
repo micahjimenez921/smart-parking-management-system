@@ -197,14 +197,15 @@ public class DriverApiTests {
         String parkedPart = after.body.substring(0, after.body.indexOf("\"payments\":"));
         check("the paid ticket is gone from her parked list", !parkedPart.contains("\"ticketId\":\"" + deeCar.getTicketId() + "\""));
         check("her other vehicle is still listed", after.body.contains("VAN-777"));
-        check("the payment shows in her recent payments", after.body.contains("\"payments\":[{\"ticketId\":\"" + deeCar.getTicketId() + "\""));
+        check("the payment shows in her recent payments", after.body.substring(after.body.indexOf("\"payments\":")).contains("\"ticketId\":\"" + deeCar.getTicketId() + "\""));
         checkEquals("paying the same ticket twice is refused", 404,
                 call("POST", "/api/my/pay", dee, form("ticketId", deeCar.getTicketId(), "method", "CARD", "detail", "4111111111111111")).status);
 
         Reply eveSees = call("GET", "/api/my/ticket", eve, null);
         check("Dee's payment does not show in Eve's history", !eveSees.body.contains("ABC 123"));
-        checkEquals("Eve pays with GCash and an 11 digit mobile number", 200,
-                call("POST", "/api/my/pay", eve, form("ticketId", eveCar.getTicketId(), "method", "GCASH", "detail", "09171234567")).status);
+        Reply evePaid = call("POST", "/api/my/pay", eve, form("ticketId", eveCar.getTicketId(), "method", "GCASH", "detail", "09171234567"));
+        checkEquals("Eve pays with GCash and an 11 digit mobile number", 200, evePaid.status);
+        check("the receipt has a reference number", evePaid.body.contains("\"reference\":\"SP-"));
         checkEquals("a mobile number with the wrong length is refused", 400,
                 call("POST", "/api/my/pay", dee, form("ticketId", deeVan.getTicketId(), "method", "GCASH", "detail", "0917")).status);
         checkEquals("a PayMaya number that does not start with 09 is refused", 400,

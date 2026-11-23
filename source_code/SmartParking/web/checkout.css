@@ -192,3 +192,34 @@
 @media (prefers-reduced-motion: reduce) {
   .co-method { transition: none; }
 }
+
+/* ---------- search and filters above the tables ---------- */
+
+.filter-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.filter-bar .select { flex: 0 1 auto; padding: 9px 12px; font-size: 13px; border-radius: 10px; }
+.filter-bar .filter-search { flex: 1 1 200px; min-width: 180px; }
+.filter-date { display: grid; gap: 4px; margin: 0; }
+.filter-date span { font-size: 11px; font-weight: 600; color: var(--muted); }
+.filter-bar.wide { flex: 1 1 100%; margin-top: 4px; }
+.filter-clear { align-self: flex-end; margin-left: auto; padding: 9px 14px; }
+
+.table-foot { display: flex; justify-content: center; margin-top: 14px; }
+.table-foot [hidden] { display: none; }
+.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; }
+.pager-btn {
+  min-width: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pager-btn:hover:not(:disabled) { background: var(--hover); }
+.pager-btn.current { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+.pager-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pager-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.pager-gap { padding: 0 4px; color: var(--muted); }

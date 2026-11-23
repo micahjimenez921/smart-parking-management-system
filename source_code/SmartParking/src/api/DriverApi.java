@@ -220,7 +220,8 @@ public class DriverApi {
 
     private String receiptJson(Receipt r) {
         return "{"
-                + "\"ticketId\":" + Json.quote(r.getTicketId())
+                + "\"reference\":" + Json.quote(r.getReference())
+                + ",\"ticketId\":" + Json.quote(r.getTicketId())
                 + ",\"plate\":" + Json.quote(r.getPlateNumber())
                 + ",\"slotId\":" + Json.quote(r.getSlotId())
                 + ",\"hours\":" + r.getHours()

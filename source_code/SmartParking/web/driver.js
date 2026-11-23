@@ -169,12 +169,7 @@ function renderDriverReceipt(card, receipt) {
   card.appendChild(head);
 
   const rows = make("div", "rows");
-  plainRow(rows, "Vehicle", receipt.plate);
-  plainRow(rows, "Slot", receipt.slotId);
-  plainRow(rows, "Hours charged", String(receipt.hours));
-  plainRow(rows, "Method", METHOD_LABEL[receipt.method] || receipt.method);
-  plainRow(rows, "Amount paid", money(receipt.amount));
-  plainRow(rows, "Paid at", formatEntry(receipt.time));
+  for (const line of receiptLines(receipt)) plainRow(rows, line.label, line.value);
   card.appendChild(rows);
 
   card.appendChild(make("div", "gate-notice open", "The exit gate has opened for your vehicle. Please drive out now."));
@@ -298,12 +293,13 @@ function renderDriverPayments() {
   const wrap = make("div", "table-wrap");
   const table = make("table", "table");
   const headRow = make("tr");
-  for (const title of ["Paid at", "Vehicle", "Method", "Amount"]) headRow.appendChild(make("th", "", title));
+  for (const title of ["Reference", "Paid at", "Vehicle", "Method", "Amount"]) headRow.appendChild(make("th", "", title));
   table.appendChild(make("thead")).appendChild(headRow);
 
   const body = make("tbody");
   for (const payment of payments) {
     const line = make("tr");
+    line.appendChild(make("td", "strong", payment.reference || ""));
     line.appendChild(make("td", "", formatEntry(payment.time)));
     line.appendChild(make("td", "", payment.plate));
     line.appendChild(make("td", "", METHOD_LABEL[payment.method] || payment.method));

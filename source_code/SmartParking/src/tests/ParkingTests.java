@@ -524,6 +524,9 @@ public class ParkingTests {
         check("both wallets share the EWalletPayment base class",
                 new GCashPayment("1") instanceof EWalletPayment && new PayMayaPayment("1") instanceof EWalletPayment);
         checkEquals("wallets give no change", 0.0, new GCashPayment("1").getChange(10));
+
+        Receipt sample = new Receipt("T-005", "ABC 123", "R-01", 2, "CASH", 40, LocalDateTime.of(2026, 11, 23, 13, 0));
+        checkEquals("receipt reference uses the date and ticket", "SP-261123-T005", sample.getReference());
     }
 
     /* ---------- factories ---------- */

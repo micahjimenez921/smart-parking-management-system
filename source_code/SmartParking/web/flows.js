@@ -232,6 +232,23 @@ function renderPayCard() {
   }));
 }
 
+/* The lines of a receipt, shared by the receipt screens and the printed receipt. */
+function receiptLines(receipt) {
+  const lines = [];
+  if (receipt.reference) lines.push({ label: "Reference no.", value: receipt.reference, strong: true });
+  lines.push({ label: "Ticket", value: receipt.ticketId });
+  lines.push({ label: "Vehicle", value: receipt.plate });
+  lines.push({ label: "Slot", value: receipt.slotId });
+  lines.push({ label: "Hours charged", value: String(receipt.hours) });
+  if (receipt.penalty > 0) lines.push({ label: "Lost ticket penalty", value: money(receipt.penalty) });
+  lines.push({ label: "Payment method", value: METHOD_LABEL[receipt.method] || receipt.method });
+  if (receipt.method === "CASH") lines.push({ label: "Cash received", value: money(receipt.amount + (receipt.change || 0)) });
+  lines.push({ label: "Amount paid", value: money(receipt.amount), strong: true });
+  if (receipt.change > 0) lines.push({ label: "Change", value: money(receipt.change) });
+  lines.push({ label: "Paid at", value: formatEntry(receipt.time) });
+  return lines;
+}
+
 function renderReceipt(card, receipt) {
   const head = make("div", "ticket-head");
   const mark = make("div", "success-mark");
@@ -242,14 +259,7 @@ function renderReceipt(card, receipt) {
   card.appendChild(head);
 
   const rows = make("div", "rows");
-  plainRow(rows, "Vehicle", receipt.plate);
-  plainRow(rows, "Slot", receipt.slotId);
-  plainRow(rows, "Hours charged", String(receipt.hours));
-  if (receipt.penalty > 0) plainRow(rows, "Lost ticket penalty", money(receipt.penalty));
-  plainRow(rows, "Method", METHOD_LABEL[receipt.method] || receipt.method);
-  plainRow(rows, "Amount paid", money(receipt.amount));
-  if (receipt.change > 0) plainRow(rows, "Change", money(receipt.change));
-  plainRow(rows, "Paid at", formatEntry(receipt.time));
+  for (const line of receiptLines(receipt)) plainRow(rows, line.label, line.value);
   card.appendChild(rows);
 
   const gateBox = make("div", "gate-notice closed");

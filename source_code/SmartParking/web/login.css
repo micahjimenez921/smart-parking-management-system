@@ -105,17 +105,10 @@ body {
   font-size: 15px;
 }
 .logo-mark {
-  display: grid;
-  place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: 12px 12px 12px 4px;
-  background: var(--ink);
-  color: var(--stage);
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 20px;
-  line-height: 1;
+  border-radius: 10px;
+  flex: none;
 }
 
 .switch {

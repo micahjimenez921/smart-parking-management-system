@@ -37,7 +37,8 @@ public class DriverApi {
         }
     }
 
-    private static final int RECENT_PAYMENTS = 10;
+    /** The most payments sent in the history list. */
+    private static final int MAX_PAYMENTS = 200;
 
     private final ParkingLot lot;
     private final ParkingRepository lotRepository;
@@ -86,7 +87,7 @@ public class DriverApi {
         StringBuilder payments = new StringBuilder("[");
         int shown = 0;
         List<Receipt> receipts = lot.getReceipts();
-        for (int i = receipts.size() - 1; i >= 0 && shown < RECENT_PAYMENTS; i--) {
+        for (int i = receipts.size() - 1; i >= 0 && shown < MAX_PAYMENTS; i--) {
             Receipt r = receipts.get(i);
             if (!driver.ownsPlate(r.getPlateNumber())) continue;
             if (shown > 0) payments.append(",");

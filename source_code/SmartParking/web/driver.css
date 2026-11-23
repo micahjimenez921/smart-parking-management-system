@@ -1,7 +1,9 @@
 /* Driver page: parked vehicle cards, the pay form, plate number chips. Colors come from style.css. */
 
 .driver-side {
+  min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   align-content: start;
 }
@@ -100,3 +102,21 @@
 .plate-chip.search-hit { outline-offset: 1px; border-radius: 999px; }
 
 .my-plate, .my-ticket-head .pill { white-space: nowrap; }
+
+/* ---------- payment history ---------- */
+
+#driver-payments .history-filter { flex: 0 1 auto; padding: 9px 12px; font-size: 13px; border-radius: 10px; }
+#driver-payments tr.pay-row.open { background: var(--primary-soft); }
+.receipt-box {
+  margin: 14px 0 0;
+  padding: 16px 18px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: var(--bg, var(--hover));
+}
+.receipt-box h3 { margin: 0 0 8px; font-size: 14px; }
+.receipt-box .btn-ghost { width: auto; margin-top: 12px; padding: 8px 18px; }
+.pay-ref { display: block; white-space: nowrap; }
+.pay-when { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+#driver-payments tr.pay-row { cursor: pointer; }
+#driver-payments tr.pay-row:hover { background: var(--hover); }

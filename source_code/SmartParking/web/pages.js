@@ -137,31 +137,26 @@ function pageNumbers(current, last) {
   return result;
 }
 
-function renderPager(totalPages) {
-  const pager = document.getElementById("payments-pager");
+/* Previous / page numbers / Next, drawn into the given element. Used by the payments table and the driver history. */
+function buildPager(pager, current, totalPages, go) {
   pager.innerHTML = "";
   pager.hidden = totalPages <= 1;
   if (totalPages <= 1) return;
 
-  const go = (page) => {
-    pageState.page = page;
-    renderPayments();
-  };
-
   const prev = make("button", "pager-btn", "Previous");
   prev.type = "button";
-  prev.disabled = pageState.page === 1;
-  prev.addEventListener("click", () => go(pageState.page - 1));
+  prev.disabled = current === 1;
+  prev.addEventListener("click", () => go(current - 1));
   pager.appendChild(prev);
 
-  for (const n of pageNumbers(pageState.page, totalPages)) {
+  for (const n of pageNumbers(current, totalPages)) {
     if (n === "...") {
       pager.appendChild(make("span", "pager-gap", "\u2026"));
       continue;
     }
-    const button = make("button", "pager-btn" + (n === pageState.page ? " current" : ""), String(n));
+    const button = make("button", "pager-btn" + (n === current ? " current" : ""), String(n));
     button.type = "button";
-    if (n === pageState.page) button.setAttribute("aria-current", "page");
+    if (n === current) button.setAttribute("aria-current", "page");
     button.setAttribute("aria-label", "Page " + n);
     button.addEventListener("click", () => go(n));
     pager.appendChild(button);
@@ -169,8 +164,8 @@ function renderPager(totalPages) {
 
   const next = make("button", "pager-btn", "Next");
   next.type = "button";
-  next.disabled = pageState.page === totalPages;
-  next.addEventListener("click", () => go(pageState.page + 1));
+  next.disabled = current === totalPages;
+  next.addEventListener("click", () => go(current + 1));
   pager.appendChild(next);
 }
 
@@ -193,7 +188,10 @@ function renderPayments() {
     ? (all.length === 0 ? "No payments yet" : "No payments match your filters")
     : "Showing " + (start + 1) + "\u2013" + (start + visible.length) + " of " + matches.length + " payments" + filtered;
 
-  renderPager(totalPages);
+  buildPager(document.getElementById("payments-pager"), pageState.page, totalPages, (page) => {
+    pageState.page = page;
+    renderPayments();
+  });
 
   if (visible.length === 0) {
     emptyRow(body, 7, all.length === 0 ? "No payments yet." : "No payments match your filters.");

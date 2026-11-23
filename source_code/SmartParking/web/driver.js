@@ -1,8 +1,9 @@
-/* Driver page: my parked vehicles, paying, my plate numbers, and my recent payments.
+/* Driver page: my parked vehicles, paying, my plate numbers, and my payment history.
    Uses helpers from app.js (make, row, money, formatEntry, getJson, currentView) and
    from flows.js (postForm, setMessage, markChoice, plainRow, METHOD_LABEL, ICON_CHECK, and buildCheckout from checkout.js). */
 
-const driverState = { data: null, paying: null, receipt: null, query: "" };
+const driverState = { data: null, paying: null, receipt: null, query: "", history: { page: 1, method: "", open: null } };
+const HISTORY_PAGE_SIZE = 5;
 
 /* drivers pay by card, GCash, or PayMaya; cash is taken by the attendant */
 const DRIVER_METHODS = ["CARD", "GCASH", "PAYMAYA"];
@@ -53,7 +54,7 @@ function applyDriverSearch(scroll) {
   const query = driverState.query || "";
   const loose = query.replace(/[\s-]/g, "");
   const items = document.querySelectorAll(
-    "#driver-parked .my-ticket, #driver-reserve .my-reservation, #driver-plates .plate-chip, #driver-payments tbody tr");
+    "#driver-parked .my-ticket, #driver-reserve .my-reservation, #driver-plates .plate-chip, #driver-payments tbody tr.pay-row");
 
   let first = null;
   for (const item of items) {
@@ -277,38 +278,115 @@ function platesChanged(plates) {
   loadDriverPage(true);
 }
 
-/* ---------- recent payments ---------- */
+/* ---------- payment history ---------- */
 
 function renderDriverPayments() {
   const card = document.getElementById("driver-payments");
   card.innerHTML = "";
-  card.appendChild(make("h2", "", "Recent payments"));
+  const history = driverState.history;
 
-  const payments = driverState.data.payments;
-  if (payments.length === 0) {
-    card.appendChild(make("p", "muted", "No payments yet."));
-    return;
+  const all = driverState.data.payments;
+  const head = make("div", "card-head");
+  const title = make("div");
+  title.appendChild(make("h2", "", "Payment history"));
+  const total = all.reduce((sum, p) => sum + p.amount, 0);
+  title.appendChild(make("p", "muted", all.length === 0 ? "Your payments and receipts appear here."
+    : all.length + (all.length === 1 ? " payment" : " payments") + " \u00B7 " + money(total) + " paid in total"));
+  head.appendChild(title);
+
+  if (all.length > 0) {
+    const select = make("select", "select history-filter");
+    select.setAttribute("aria-label", "Filter by payment method");
+    const methods = [...new Set(all.map(p => p.method))];
+    select.appendChild(new Option("All methods", ""));
+    for (const m of methods) select.appendChild(new Option(METHOD_LABEL[m] || m, m));
+    select.value = methods.includes(history.method) ? history.method : "";
+    history.method = select.value;
+    select.addEventListener("change", () => {
+      history.method = select.value;
+      history.page = 1;
+      history.open = null;
+      renderDriverPayments();
+      applyDriverSearch(false);
+    });
+    head.appendChild(select);
   }
+  card.appendChild(head);
+
+  if (all.length === 0) return;
+
+  const payments = all.filter(p => history.method === "" || p.method === history.method);
+  const totalPages = Math.max(1, Math.ceil(payments.length / HISTORY_PAGE_SIZE));
+  history.page = Math.min(Math.max(1, history.page), totalPages);
+  const shown = payments.slice((history.page - 1) * HISTORY_PAGE_SIZE, history.page * HISTORY_PAGE_SIZE);
 
   const wrap = make("div", "table-wrap");
   const table = make("table", "table");
   const headRow = make("tr");
-  for (const title of ["Reference", "Paid at", "Vehicle", "Method", "Amount"]) headRow.appendChild(make("th", "", title));
+  for (const label of ["Payment", "Vehicle", "Method", "Amount", ""]) headRow.appendChild(make("th", "", label));
   table.appendChild(make("thead")).appendChild(headRow);
 
   const body = make("tbody");
-  for (const payment of payments) {
-    const line = make("tr");
-    line.appendChild(make("td", "strong", payment.reference || ""));
-    line.appendChild(make("td", "", formatEntry(payment.time)));
+  for (const payment of shown) {
+    const isOpen = history.open === payment.ticketId;
+    const line = make("tr", "pay-row" + (isOpen ? " open" : ""));
+    const paymentCell = make("td");
+    paymentCell.appendChild(make("b", "pay-ref", payment.reference || "-"));
+    paymentCell.appendChild(make("small", "pay-when", formatEntry(payment.time)));
+    line.appendChild(paymentCell);
     line.appendChild(make("td", "", payment.plate));
-    line.appendChild(make("td", "", METHOD_LABEL[payment.method] || payment.method));
+    const methodCell = make("td");
+    methodCell.appendChild(methodChip(payment.method));
+    line.appendChild(methodCell);
     line.appendChild(make("td", "strong", money(payment.amount)));
+
+    const action = make("td");
+    const button = make("button", "btn-small", isOpen ? "Hide" : "Receipt");
+    button.type = "button";
+    button.setAttribute("aria-expanded", String(isOpen));
+    /* the whole row opens the receipt, so it is easy to tap on a phone; the button bubbles up to it */
+    line.addEventListener("click", () => {
+      history.open = isOpen ? null : payment.ticketId;
+      renderDriverPayments();
+      applyDriverSearch(false);
+    });
+    action.appendChild(button);
+    line.appendChild(action);
     body.appendChild(line);
   }
   table.appendChild(body);
   wrap.appendChild(table);
   card.appendChild(wrap);
+
+  const openPayment = shown.find(p => p.ticketId === history.open);
+  if (openPayment) card.appendChild(driverReceiptBox(openPayment));
+
+  const foot = make("div", "table-foot");
+  const pager = make("nav", "pager");
+  pager.setAttribute("aria-label", "Payment history pages");
+  foot.appendChild(pager);
+  card.appendChild(foot);
+  buildPager(pager, history.page, totalPages, (page) => {
+    history.page = page;
+    history.open = null;
+    renderDriverPayments();
+    applyDriverSearch(false);
+  });
+}
+
+/* A past receipt, opened under the table, with a Print button. */
+function driverReceiptBox(payment) {
+  const box = make("div", "receipt-box");
+  box.appendChild(make("h3", "", "Receipt"));
+  const rows = make("div", "rows");
+  for (const line of receiptLines(payment)) plainRow(rows, line.label, line.value);
+  box.appendChild(rows);
+
+  const print = make("button", "btn-ghost", "Print receipt");
+  print.type = "button";
+  print.addEventListener("click", () => printReceipt(payment));
+  box.appendChild(print);
+  return box;
 }
 
 /* ---------- keeping the page up to date ---------- */

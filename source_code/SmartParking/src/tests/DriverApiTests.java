@@ -7,6 +7,7 @@ import api.ParkingApi;
 import api.WebServer;
 import app.DemoData;
 import gate.GateState;
+import model.Receipt;
 import model.Ticket;
 import model.VehicleFactory;
 import security.AccessPolicy;
@@ -212,6 +213,14 @@ public class DriverApiTests {
                 call("POST", "/api/my/pay", dee, form("ticketId", deeVan.getTicketId(), "method", "PAYMAYA", "detail", "18171234567")).status);
         checkEquals("a driver cannot pay cash", 400,
                 call("POST", "/api/my/pay", dee, form("ticketId", deeVan.getTicketId(), "method", "CASH", "detail", "500")).status);
+
+        for (int i = 0; i < 12; i++) {
+            lot.addReceipt(new Receipt("OLD-" + i, "EVE 555", "R-01", 1, "CASH", 20));
+        }
+        String history = call("GET", "/api/my/ticket", eve, null).body;
+        int listed = history.split("\"reference\"", -1).length - 1;
+        check("the payment history lists more than 10 payments", listed >= 13);
+        check("the history never shows other drivers' payments", !history.contains("ABC 123"));
     }
 
     private static void plateTests(UserDirectory directory) throws Exception {

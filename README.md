@@ -64,7 +64,7 @@ Drivers can register themselves on the sign-in page. Staff accounts can only be 
 ### Management and reports
 - **Settings page (administrator)**: change slot rates, the daily cap, and the lost-ticket penalty, and add or remove parking slots. Everything is saved.
 - **Tickets page**: search the parked vehicles by ticket, plate, or slot and filter them by vehicle type. The payments table can be searched by reference, ticket, plate, or slot, filtered by payment method and date range, and is shown in pages of 10.
-- **Parking map and reports**: a color-coded slot map, plus charts for revenue (7 or 30 days), parking duration, and payment methods.
+- **Parking map and reports**: a color-coded slot map, plus a Reports page for the last 7, 30 or 90 days: revenue per day, busiest hours, revenue by slot type, payment methods, and parking duration. The page can print a one-page summary and download the payments as a CSV file (opens in Excel).
 - **Data persistence**: parked vehicles, payments, ticket numbers, settings, and accounts are saved to files and restored on startup.
 - **Sign-in page**: an animated 3D parking lot built with the three.js library, which is included in the project so it works offline.
 - **Light and dark mode**: switchable from the top bar.

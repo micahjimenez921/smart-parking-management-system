@@ -338,7 +338,12 @@
         <section class="view" id="view-reports">
           <div class="page-head">
             <h1>Reports</h1>
-            <p class="muted">Revenue, parking duration, and payment methods</p>
+            <p class="muted">Revenue, busy hours, parking duration, and payment methods</p>
+          </div>
+
+          <div class="report-actions">
+            <button type="button" class="btn-ghost" id="rpt-print">Print summary</button>
+            <button type="button" class="btn-ghost" id="rpt-csv">Download CSV</button>
           </div>
 
           <div class="stats">
@@ -356,7 +361,7 @@
             <div class="card stat-card">
               <div>
                 <div class="stat-value" id="rpt-total">-</div>
-                <div class="stat-label">Total revenue</div>
+                <div class="stat-label" id="rpt-total-label">Revenue</div>
                 <div class="stat-meta" id="rpt-total-meta">&nbsp;</div>
               </div>
               <span class="stat-icon tone-blue">
@@ -367,7 +372,7 @@
             <div class="card stat-card">
               <div>
                 <div class="stat-value" id="rpt-count">-</div>
-                <div class="stat-label">Payments</div>
+                <div class="stat-label" id="rpt-count-label">Payments</div>
                 <div class="stat-meta" id="rpt-count-meta">&nbsp;</div>
               </div>
               <span class="stat-icon tone-amber">
@@ -397,6 +402,7 @@
                 <div class="filters" id="range-chips">
                   <button class="chip active" data-range="7">7 days</button>
                   <button class="chip" data-range="30">30 days</button>
+                  <button class="chip" data-range="90">90 days</button>
                 </div>
               </div>
               <div class="chart" id="chart-revenue"></div>
@@ -406,6 +412,20 @@
               <h2>Payment methods</h2>
               <p class="muted">Share of all payments</p>
               <div class="chart" id="chart-methods"></div>
+            </div>
+          </div>
+
+          <div class="grid-charts">
+            <div class="card">
+              <h2>Busiest hours</h2>
+              <p class="muted" id="hours-note">Payments taken at each hour of the day</p>
+              <div class="chart" id="chart-hours"></div>
+            </div>
+
+            <div class="card">
+              <h2>Revenue by slot type</h2>
+              <p class="muted">Where the money comes from</p>
+              <div class="chart" id="chart-slottypes"></div>
             </div>
           </div>
 

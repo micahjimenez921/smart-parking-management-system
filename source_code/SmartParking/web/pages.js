@@ -257,10 +257,31 @@ function sumAmount(list) {
   return list.reduce((total, r) => total + r.amount, 0);
 }
 
+const SLOT_TYPE_COLOR = { REGULAR: "var(--primary)", HANDICAPPED: "var(--teal)", VIP: "var(--violet)" };
+
+/** The receipts inside the chosen period (the last N days, today included). */
+function periodReceipts() {
+  const first = new Date();
+  first.setDate(first.getDate() - (pageState.range - 1));
+  const firstKey = dayKey(first);
+  return pageState.receipts.filter(r => r.time.slice(0, 10) >= firstKey);
+}
+
+function slotTypeOf(slotId) {
+  const known = (state.slots || []).find(s => s.id === slotId);
+  if (known) return known.type;
+  return { R: "REGULAR", H: "HANDICAPPED", V: "VIP" }[String(slotId).charAt(0)] || "REGULAR";
+}
+
+function periodText() {
+  return "last " + pageState.range + " days";
+}
+
 function renderReports() {
-  const receipts = pageState.receipts;
+  const all = pageState.receipts;
+  const receipts = periodReceipts();
   const todayKey = dayKey(new Date());
-  const today = receipts.filter(r => r.time.slice(0, 10) === todayKey);
+  const today = all.filter(r => r.time.slice(0, 10) === todayKey);
 
   const totalHours = receipts.reduce((total, r) => total + r.hours, 0);
   const average = receipts.length > 0 ? totalHours / receipts.length : 0;
@@ -269,13 +290,18 @@ function renderReports() {
   document.getElementById("rpt-today-meta").textContent =
     today.length === 1 ? "1 payment today" : today.length + " payments today";
   document.getElementById("rpt-total").textContent = money(sumAmount(receipts));
-  document.getElementById("rpt-total-meta").textContent = "All recorded payments";
+  document.getElementById("rpt-total-label").textContent = "Revenue";
+  document.getElementById("rpt-total-meta").textContent = "In the " + periodText();
   document.getElementById("rpt-count").textContent = String(receipts.length);
-  document.getElementById("rpt-count-meta").textContent = "Completed checkouts";
+  document.getElementById("rpt-count-meta").textContent = receipts.length > 0
+    ? "Average " + money(sumAmount(receipts) / receipts.length) + " each"
+    : "In the " + periodText();
   document.getElementById("rpt-avg").textContent = average.toFixed(1) + " hrs";
-  document.getElementById("rpt-avg-meta").textContent = "Per parked vehicle";
+  document.getElementById("rpt-avg-meta").textContent = "Per parked vehicle, " + periodText();
 
   renderRevenueChart(receipts);
+  renderHoursChart(receipts);
+  renderSlotTypeChart(receipts);
   renderDurationChart(receipts);
   renderMethodChart(receipts);
 }
@@ -302,12 +328,63 @@ function renderRevenueChart(receipts) {
   }
 
   if (receipts.length === 0) {
-    emptyChart(document.getElementById("chart-revenue"), "No payments yet.");
+    emptyChart(document.getElementById("chart-revenue"), "No payments in the " + periodText() + ".");
     return;
   }
   lineChart(document.getElementById("chart-revenue"), items, {
     formatAxis: compactMoney,
     ariaLabel: "Revenue per day"
+  });
+}
+
+function hourLabel(hour) {
+  const h = hour % 12 === 0 ? 12 : hour % 12;
+  return h + (hour < 12 ? "a" : "p");
+}
+
+/** Payments by hour of the day, to show when the lot is busiest. */
+function hoursBreakdown(receipts) {
+  const counts = new Array(24).fill(0);
+  for (const r of receipts) counts[Number(r.time.slice(11, 13))]++;
+  return counts;
+}
+
+function renderHoursChart(receipts) {
+  const counts = hoursBreakdown(receipts);
+  const items = counts.map((count, hour) => ({
+    label: hourLabel(hour),
+    value: count,
+    tip: hourLabel(hour) + " (" + String(hour).padStart(2, "0") + ":00): " + count + (count === 1 ? " payment" : " payments")
+  }));
+
+  const biggest = Math.max(...counts);
+  document.getElementById("hours-note").textContent = biggest > 0
+    ? "Busiest at " + busiestHourText(counts) + ". Payments taken at each hour, " + periodText() + "."
+    : "Payments taken at each hour of the day";
+  barChart(document.getElementById("chart-hours"), items, { ariaLabel: "Payments by hour of the day" });
+}
+
+function busiestHourText(counts) {
+  const biggest = Math.max(...counts);
+  const hour = counts.indexOf(biggest);
+  const next = (hour + 1) % 24;
+  return hourLabel(hour).replace("a", " AM").replace("p", " PM") + " to " + hourLabel(next).replace("a", " AM").replace("p", " PM");
+}
+
+function renderSlotTypeChart(receipts) {
+  const items = Object.keys(TYPE_LABEL).map(type => {
+    const forType = receipts.filter(r => slotTypeOf(r.slotId) === type);
+    return {
+      label: TYPE_LABEL[type],
+      value: sumAmount(forType),
+      color: SLOT_TYPE_COLOR[type],
+      detail: forType.length + (forType.length === 1 ? " payment" : " payments")
+    };
+  });
+  donutChart(document.getElementById("chart-slottypes"), items, {
+    centerLabel: "revenue",
+    formatTotal: compactMoney,
+    ariaLabel: "Revenue by slot type"
   });
 }
 
@@ -344,6 +421,54 @@ function renderMethodChart(receipts) {
   });
 }
 
+/* ---------- download and print ---------- */
+
+function csvCell(value) {
+  const text = String(value);
+  return /[",\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+}
+
+function reportCsv(receipts) {
+  const lines = [["Reference", "Ticket", "Plate", "Slot", "Slot type", "Hours", "Method", "Amount", "Date", "Time"].join(",")];
+  for (const r of receipts) {
+    lines.push([
+      r.reference, r.ticketId, r.plate, r.slotId, TYPE_LABEL[slotTypeOf(r.slotId)],
+      r.hours, METHOD_LABEL[r.method] || r.method, Number(r.amount).toFixed(2),
+      r.time.slice(0, 10), r.time.slice(11, 16)
+    ].map(csvCell).join(","));
+  }
+  return lines.join("\r\n");
+}
+
+function downloadReport() {
+  const receipts = periodReceipts();
+  const blob = new Blob(["\uFEFF" + reportCsv(receipts)], { type: "text/csv;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "smartpark-payments-" + dayKey(new Date()) + ".csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(link.href);
+}
+
+function printReport() {
+  const receipts = periodReceipts();
+  const counts = hoursBreakdown(receipts);
+  const rows = [
+    { label: "Period", value: "Last " + pageState.range + " days" },
+    { label: "Payments", value: String(receipts.length) },
+    { label: "Revenue", value: money(sumAmount(receipts)), strong: true },
+    { label: "Average stay", value: (receipts.length > 0 ? receipts.reduce((t, r) => t + r.hours, 0) / receipts.length : 0).toFixed(1) + " hrs" }
+  ];
+  if (Math.max(...counts) > 0) rows.push({ label: "Busiest hour", value: busiestHourText(counts) });
+  for (const method of Object.keys(METHOD_LABEL)) {
+    const forMethod = receipts.filter(r => r.method === method);
+    if (forMethod.length > 0) rows.push({ label: METHOD_LABEL[method], value: money(sumAmount(forMethod)) + " (" + forMethod.length + ")" });
+  }
+  printSlip("Revenue report", rows, "Totals come from the recorded payments.");
+}
+
 async function loadReportsPage() {
   try {
     pageState.receipts = await getJson("/api/receipts?limit=1000");
@@ -369,9 +494,12 @@ for (const chip of document.querySelectorAll("#range-chips .chip")) {
     for (const other of document.querySelectorAll("#range-chips .chip")) {
       other.classList.toggle("active", other === chip);
     }
-    renderRevenueChart(pageState.receipts);
+    renderReports();
   });
 }
+
+document.getElementById("rpt-csv").addEventListener("click", downloadReport);
+document.getElementById("rpt-print").addEventListener("click", printReport);
 
 window.addEventListener("hashchange", loadCurrentPage);
 setInterval(loadCurrentPage, 5000);

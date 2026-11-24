@@ -896,3 +896,5 @@ h2 { font-size: 17px; }
 .btn-small.danger:hover { background: var(--busy-soft); }
 .btn-small:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-small:disabled:hover { background: transparent; }
+.report-actions { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.report-actions .btn-ghost { width: auto; margin-top: 0; padding: 9px 18px; }

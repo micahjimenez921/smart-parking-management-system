@@ -228,7 +228,7 @@ function donutChart(container, items, options) {
     offset += length;
   }
 
-  svg += '<text class="donut-total" x="100" y="102" text-anchor="middle">' + total + "</text>";
+  svg += '<text class="donut-total" x="100" y="102" text-anchor="middle">' + ((options && options.formatTotal) ? options.formatTotal(total) : total) + "</text>";
   svg += '<text class="donut-sub" x="100" y="120" text-anchor="middle">' +
     esc((options && options.centerLabel) || "total") + "</text>";
   svg += "</svg>";

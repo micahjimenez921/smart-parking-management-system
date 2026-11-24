@@ -452,21 +452,116 @@ function downloadReport() {
   URL.revokeObjectURL(link.href);
 }
 
-function printReport() {
-  const receipts = periodReceipts();
-  const counts = hoursBreakdown(receipts);
-  const rows = [
-    { label: "Period", value: "Last " + pageState.range + " days" },
-    { label: "Payments", value: String(receipts.length) },
-    { label: "Revenue", value: money(sumAmount(receipts)), strong: true },
-    { label: "Average stay", value: (receipts.length > 0 ? receipts.reduce((t, r) => t + r.hours, 0) / receipts.length : 0).toFixed(1) + " hrs" }
-  ];
-  if (Math.max(...counts) > 0) rows.push({ label: "Busiest hour", value: busiestHourText(counts) });
-  for (const method of Object.keys(METHOD_LABEL)) {
-    const forMethod = receipts.filter(r => r.method === method);
-    if (forMethod.length > 0) rows.push({ label: METHOD_LABEL[method], value: money(sumAmount(forMethod)) + " (" + forMethod.length + ")" });
+function printCell(tag, text, className) {
+  return make(tag, className || "", text);
+}
+
+function printTable(headers, rows, rightFrom) {
+  const table = make("table", "pr-table");
+  const head = make("tr", "");
+  headers.forEach((h, i) => head.appendChild(printCell("th", h, i >= rightFrom ? "num" : "")));
+  const thead = make("thead", "");
+  thead.appendChild(head);
+  table.appendChild(thead);
+  const body = make("tbody", "");
+  for (const values of rows) {
+    const tr = make("tr", values.total ? "pr-total" : "");
+    values.cells.forEach((text, i) => tr.appendChild(printCell("td", text, i >= rightFrom ? "num" : "")));
+    body.appendChild(tr);
   }
-  printSlip("Revenue report", rows, "Totals come from the recorded payments.");
+  table.appendChild(body);
+  return table;
+}
+
+function printSection(title, node) {
+  const box = make("section", "pr-section");
+  box.appendChild(make("h2", "", title));
+  box.appendChild(node);
+  return box;
+}
+
+/** A full-page report (A4), not a receipt slip: summary, breakdowns, and every payment in the period. */
+function printReport() {
+  const receipts = periodReceipts().slice().sort((a, b) => b.time.localeCompare(a.time));
+  const revenue = sumAmount(receipts);
+  const counts = hoursBreakdown(receipts);
+  const first = new Date();
+  first.setDate(first.getDate() - (pageState.range - 1));
+  const fmt = { month: "short", day: "numeric", year: "numeric" };
+  const rangeText = first.toLocaleDateString("en-PH", fmt) + " to " + new Date().toLocaleDateString("en-PH", fmt);
+
+  const root = document.getElementById("print-report");
+  root.innerHTML = "";
+
+  const header = make("header", "pr-head");
+  const brand = make("div", "pr-brand");
+  const logo = document.createElement("img");
+  logo.src = "logo.svg";
+  logo.alt = "";
+  brand.appendChild(logo);
+  brand.appendChild(make("span", "", "SmartPark"));
+  header.appendChild(brand);
+  const meta = make("div", "pr-meta");
+  meta.appendChild(make("h1", "", "Revenue report"));
+  meta.appendChild(make("div", "", rangeText + " (last " + pageState.range + " days)"));
+  meta.appendChild(make("div", "", "Printed " + new Date().toLocaleString("en-PH")
+    + (session.user ? " by " + session.user.name : "")));
+  header.appendChild(meta);
+  root.appendChild(header);
+
+  const tiles = make("div", "pr-tiles");
+  const tile = (label, value) => {
+    const t = make("div", "pr-tile");
+    t.appendChild(make("b", "", value));
+    t.appendChild(make("span", "", label));
+    tiles.appendChild(t);
+  };
+  tile("Revenue", money(revenue));
+  tile("Payments", String(receipts.length));
+  tile("Average payment", receipts.length > 0 ? money(revenue / receipts.length) : money(0));
+  tile("Average stay", (receipts.length > 0 ? receipts.reduce((t, r) => t + r.hours, 0) / receipts.length : 0).toFixed(1) + " hrs");
+  tile("Busiest hour", Math.max(...counts) > 0 ? busiestHourText(counts) : "None yet");
+  root.appendChild(tiles);
+
+  const pair = make("div", "pr-pair");
+  const methodRows = Object.keys(METHOD_LABEL).map(m => {
+    const list = receipts.filter(r => r.method === m);
+    return { cells: [METHOD_LABEL[m], String(list.length), money(sumAmount(list)), (revenue > 0 ? Math.round(sumAmount(list) / revenue * 100) : 0) + "%"] };
+  }).filter(r => r.cells[1] !== "0");
+  methodRows.push({ total: true, cells: ["Total", String(receipts.length), money(revenue), revenue > 0 ? "100%" : "0%"] });
+  pair.appendChild(printSection("By payment method", printTable(["Method", "Payments", "Amount", "Share"], methodRows, 1)));
+
+  const typeRows = Object.keys(TYPE_LABEL).map(t => {
+    const list = receipts.filter(r => slotTypeOf(r.slotId) === t);
+    return { cells: [TYPE_LABEL[t], String(list.length), money(sumAmount(list)), (revenue > 0 ? Math.round(sumAmount(list) / revenue * 100) : 0) + "%"] };
+  });
+  pair.appendChild(printSection("By slot type", printTable(["Slot type", "Payments", "Amount", "Share"], typeRows, 1)));
+  root.appendChild(pair);
+
+  const dayRows = [];
+  for (let back = 0; back < pageState.range; back++) {
+    const date = new Date();
+    date.setDate(date.getDate() - back);
+    const list = receipts.filter(r => r.time.slice(0, 10) === dayKey(date));
+    if (list.length > 0) {
+      dayRows.push({ cells: [date.toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric" }), String(list.length), money(sumAmount(list))] });
+    }
+  }
+  if (dayRows.length > 0) root.appendChild(printSection("Revenue by day", printTable(["Day", "Payments", "Revenue"], dayRows, 1)));
+
+  const listRows = receipts.map(r => ({ cells: [
+    r.reference, r.time.slice(0, 10) + " " + r.time.slice(11, 16), r.plate, r.slotId,
+    METHOD_LABEL[r.method] || r.method, r.hours + (r.hours === 1 ? " hr" : " hrs"), money(r.amount)
+  ] }));
+  if (listRows.length > 0) {
+    root.appendChild(printSection("All payments", printTable(["Reference", "Paid", "Plate", "Slot", "Method", "Stay", "Amount"], listRows, 5)));
+  } else {
+    root.appendChild(make("p", "pr-empty", "No payments in this period."));
+  }
+
+  document.body.classList.add("printing-report");
+  window.addEventListener("afterprint", () => document.body.classList.remove("printing-report"), { once: true });
+  window.print();
 }
 
 async function loadReportsPage() {

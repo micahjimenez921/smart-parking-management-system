@@ -898,3 +898,42 @@ h2 { font-size: 17px; }
 .btn-small:disabled:hover { background: transparent; }
 .report-actions { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
 .report-actions .btn-ghost { width: auto; margin-top: 0; padding: 9px 18px; }
+
+/* ---------- printed report (full page) ---------- */
+.print-report { display: none; }
+
+@media print {
+  body.printing-report .print-slip { display: none !important; }
+  body.printing-report .print-report {
+    display: block;
+    color: #000000;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 10pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .pr-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 8mm; padding-bottom: 4mm; border-bottom: 2px solid #2563eb; }
+  .pr-brand { display: flex; align-items: center; gap: 3mm; font-size: 18pt; font-weight: 800; color: #2563eb; }
+  .pr-brand img { width: 11mm; height: 11mm; }
+  .pr-meta { text-align: right; font-size: 9pt; color: #374151; line-height: 1.5; }
+  .pr-meta h1 { margin: 0 0 1mm; font-size: 16pt; color: #000000; }
+
+  .pr-tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3mm; margin: 6mm 0; }
+  .pr-tile { padding: 3mm; border: 1px solid #cbd5e1; border-radius: 2mm; background: #f1f5f9; }
+  .pr-tile b { display: block; font-size: 12pt; }
+  .pr-tile span { font-size: 8pt; color: #475569; }
+
+  .pr-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
+  .pr-section { margin-bottom: 6mm; break-inside: auto; }
+  .pr-section h2 { margin: 0 0 2mm; font-size: 11pt; }
+
+  .pr-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+  .pr-table th { padding: 1.6mm 2mm; text-align: left; background: #e2e8f0; border-bottom: 1px solid #94a3b8; }
+  .pr-table td { padding: 1.4mm 2mm; border-bottom: 1px solid #e2e8f0; }
+  .pr-table .num { text-align: right; }
+  .pr-table thead { display: table-header-group; }
+  .pr-table tr { break-inside: avoid; }
+  .pr-total td { font-weight: 800; border-top: 1px solid #000000; border-bottom: 0; }
+  .pr-empty { margin-top: 8mm; text-align: center; color: #475569; }
+}

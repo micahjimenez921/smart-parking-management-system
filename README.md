@@ -58,7 +58,7 @@ Drivers can register themselves on the sign-in page. Staff accounts can only be 
 ### Drivers
 - **Driver page**: parked vehicles, the fee so far, payment by card, GCash, or PayMaya (cash is taken by the attendant), and saved plate numbers.
 - **Payment history**: all of the driver's payments with a method filter and pages. A row opens the full receipt, which can be printed.
-- **Reservations**: reserve a free slot for 30 minutes. Unused reservations expire. Attendants can see and cancel them.
+- **Reservations**: reserve a free slot for 30 minutes. The driver presses "I have arrived" when they reach the lot: the attendant is told, the slot is marked "Arrived", and it stays held for at least 10 more minutes. Unused reservations expire. Attendants can see and cancel them.
 - **Notifications**: the bell in the top bar shows real events, such as reservations and accounts.
 
 ### Management and reports
@@ -183,7 +183,7 @@ java -cp out tests.ReservationTests
 java -cp out tests.WebAccessTests
 ```
 
-Each program prints the number of checks passed and failed. At the time of writing, all 732 checks pass.
+Each program prints the number of checks passed and failed. At the time of writing, all 749 checks pass.
 
 | Test program | Covers |
 |---|---|
@@ -191,7 +191,7 @@ Each program prints the number of checks passed and failed. At the time of writi
 | `SecurityTests` | Password hashing, sessions, role permissions, lockout |
 | `UserApiTests` | Creating, renaming, resetting, and deleting accounts; self-registration |
 | `DriverApiTests` | The driver page: vehicles, fees, card, GCash and PayMaya payment, payment history, plate numbers |
-| `ReservationTests` | Reserving slots, expiry, notifications |
+| `ReservationTests` | Reserving slots, expiry, driver check-in, notifications |
 | `WebAccessTests` | Which pages need a sign-in, cookie settings, file types |
 
 The browser pages are not covered by automated tests yet.
@@ -216,9 +216,13 @@ What each one shows:
 - **Sequence:** park a vehicle, reserve a slot, and pay and leave.
 - **Activity:** one full visit in three lanes (driver, attendant, system), from sign in to leaving with a receipt.
 
+The October drawings were replaced. Their Google Drive links are kept below.
 
-``` 
-SPMS - UML Diagrams: https://drive.google.com/drive/folders/1CZ6lhciMjMI0FgpjX9ZR17xJoOedUwNa?usp=drive_link
+```
+Activity Diagram - https://drive.google.com/file/d/1qCvfWEacayVQOiDpiswt9HcmbSzh8mZ2/view?usp=sharing
+Class Diagram - https://drive.google.com/file/d/1xnFcemooXX9RI9cOM4pxUOtNwubIkxb4/view?usp=drive_link
+Sequence Diagram - https://drive.google.com/file/d/1nI1CPg_d7qLd5hFDEZWrF4E8xKmXwD2z/view?usp=drive_link
+Usecase Diagram - https://drive.google.com/file/d/1fJ5VBUVPP-s7xM8wY9TlLhuA2bSJ6bVm/view?usp=drive_link
 ```
 
 ---

@@ -85,7 +85,8 @@ function renderEntryAvailability() {
       info.textContent = money(ofType[0].rate) + "/hr \u00B7 " + (free > 0 ? free + " free" : "Full")
         + (held > 0 ? " \u00B7 " + held + " held" : "");
     }
-    button.disabled = free === 0;
+    // a type whose only free slot is held for this plate stays usable once it is chosen from the slot detail
+    button.disabled = free === 0 && !(held > 0 && entryState.slotType === type);
   }
 }
 
@@ -148,6 +149,18 @@ function renderEntryResult() {
     renderDetail();
   });
   card.appendChild(back);
+}
+
+/** From a reserved slot: open the Vehicle entry page with the reservation's plate and slot type filled in. */
+function startEntryForReservation(slot) {
+  document.getElementById("entry-plate").value = slot.reservedFor;
+  document.getElementById("entry-owner").value = "";
+  entryState.slotType = slot.type;
+  markChoice(document.getElementById("entry-slot"), entryState.slotType);
+  showView("entry");
+  setMessage(document.getElementById("entry-msg"),
+    "Reservation " + slot.reservationId + " for slot " + slot.id + ". Enter the owner name and vehicle type, then register.", "success");
+  document.getElementById("entry-owner").focus();
 }
 
 async function submitEntry(event) {

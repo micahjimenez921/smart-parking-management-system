@@ -62,10 +62,30 @@ function reservationBox(r) {
   const head = make("div", "my-ticket-head");
   head.appendChild(make("b", "my-plate", r.plate));
   head.appendChild(make("span", "pill held", "Slot " + r.slotId));
+  if (r.arrived) head.appendChild(make("span", "pill free", "Checked in"));
   box.appendChild(head);
 
   box.appendChild(make("p", "muted", (TYPE_LABEL[r.slotType] || r.slotType) + " slot, " + money(r.rate)
     + " per hour once you park. Held for " + r.minutesLeft + " more min (until " + timeText(r.expiresAt) + ")."));
+
+  if (r.arrived) {
+    box.appendChild(make("p", "gate-notice open",
+      "The attendant knows you are here. Go to the entry gate and give your plate number."));
+  } else {
+    const arrive = make("button", "btn", "I have arrived");
+    arrive.setAttribute("type", "button");
+    arrive.addEventListener("click", async () => {
+      arrive.disabled = true;
+      try {
+        await postForm("/api/my/reserve/arrive", { id: r.id });
+        reserveState.message = { kind: "success", text: "Checked in. The attendant has been told, and slot " + r.slotId + " stays held for a few more minutes." };
+      } catch (error) {
+        reserveState.message = { kind: "error", text: error.message };
+      }
+      loadReservations(true);
+    });
+    box.appendChild(arrive);
+  }
 
   const cancel = make("button", "btn-ghost", "Cancel reservation");
   cancel.setAttribute("type", "button");

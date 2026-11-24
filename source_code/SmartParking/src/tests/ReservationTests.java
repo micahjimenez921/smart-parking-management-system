@@ -101,6 +101,7 @@ public class ReservationTests {
             runSection("A driver reserves", () -> driverTests());
             runSection("Staff see and cancel reservations", () -> staffTests());
             runSection("Parking a vehicle that has a reservation", () -> arrivalTests());
+            runSection("Checking in when the driver arrives", () -> checkInTests());
             runSection("Notifications", () -> notificationTests());
         } finally {
             server.stop();
@@ -372,6 +373,65 @@ public class ReservationTests {
         Reply plain = call("POST", "/api/park", ben,
                 form("plate", "NOBOOK 1", "owner", "Walk In", "vehicleType", "CAR", "slotType", "REGULAR"));
         check("a vehicle without a reservation does not say so", plain.status == 200 && !plain.body.contains("fromReservation"));
+        resetLot();
+    }
+
+    private static void checkInTests() throws Exception {
+        resetLot();
+        String dee = cookieFor("dee", "driver-pass-1");
+        String eve = cookieFor("eve", "driver-pass-2");
+        String ben = cookieFor("ben", "attendant-pass-1");
+
+        Reply made = call("POST", "/api/my/reserve", dee, form("plate", "ABC 123", "slotType", "REGULAR"));
+        String id = field(made.body, "id");
+        check("a new reservation has not arrived", made.body.contains("\"arrived\":false") && made.body.contains("\"arrivedAt\":null"));
+        check("staff see the slot as not arrived", call("GET", "/api/slots", ben, null).body.contains("\"reservedArrived\":false"));
+
+        checkEquals("another driver cannot check in for it (404)", 404,
+                call("POST", "/api/my/reserve/arrive", eve, form("id", id)).status);
+        checkEquals("staff cannot use the driver check-in (403)", 403,
+                call("POST", "/api/my/reserve/arrive", ben, form("id", id)).status);
+        checkEquals("GET is refused (405)", 405, call("GET", "/api/my/reserve/arrive", dee, null).status);
+        checkEquals("signed-out visitors get 401", 401, call("POST", "/api/my/reserve/arrive", null, form("id", id)).status);
+        checkEquals("an unknown reservation is a 404", 404, call("POST", "/api/my/reserve/arrive", dee, form("id", "R-999")).status);
+
+        Reply arrived = call("POST", "/api/my/reserve/arrive", dee, form("id", id));
+        checkEquals("the owner checks in", 200, arrived.status);
+        check("the answer says arrived", arrived.body.contains("\"arrived\":true") && !arrived.body.contains("\"arrivedAt\":null"));
+        checkEquals("checking in twice is a 409", 409, call("POST", "/api/my/reserve/arrive", dee, form("id", id)).status);
+        check("staff see that the driver arrived", call("GET", "/api/slots", ben, null).body.contains("\"reservedArrived\":true"));
+        check("staff are notified", call("GET", "/api/notifications", ben, null).body.contains("Driver arrived"));
+        check("the driver is told it worked", call("GET", "/api/notifications", dee, null).body.contains("Check-in received"));
+
+        // saved and loaded back
+        lotRepository.save(lot);
+        ParkingLot loaded = DemoData.createEmptyLot();
+        lotRepository.load(loaded);
+        Reservation back = loaded.findReservation(id);
+        check("the arrival is saved and loaded back", back != null && back.hasArrived());
+
+        // the hold: a late check-in extends it, an early one never shortens it
+        resetLot();
+        LocalDateTime now = LocalDateTime.now();
+        Reservation early = lot.reserve("U-001", "EARLY 1", "REGULAR", now);
+        LocalDateTime originalEnd = early.getExpiresAt();
+        lot.checkIn(early.getId(), now.plusMinutes(5));
+        check("an early check-in never shortens the hold", early.getExpiresAt().equals(originalEnd));
+
+        Reservation late = lot.reserve("U-001", "LATE 2", "VIP", now.minusMinutes(ParkingLot.RESERVATION_MINUTES - 2));
+        lot.checkIn(late.getId(), now);
+        check("a late check-in keeps the slot a few more minutes",
+                late.minutesLeft(now) >= ParkingLot.ARRIVAL_GRACE_MINUTES - 1);
+
+        // too late: it already ran out
+        Reservation gone = lot.reserve("U-001", "GONE 3", "HANDICAPPED", now.minusMinutes(ParkingLot.RESERVATION_MINUTES + 5));
+        boolean refused = false;
+        try {
+            lot.checkIn(gone.getId(), now);
+        } catch (IllegalArgumentException e) {
+            refused = true;
+        }
+        check("a reservation that ran out cannot check in", refused);
         resetLot();
     }
 

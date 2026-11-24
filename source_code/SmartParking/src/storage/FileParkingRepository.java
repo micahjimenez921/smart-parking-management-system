@@ -69,7 +69,8 @@ public class FileParkingRepository implements ParkingRepository {
                     r.getPlateNumber(),
                     r.getSlot().getSlotId(),
                     r.getCreatedAt().toString(),
-                    r.getExpiresAt().toString()));
+                    r.getExpiresAt().toString(),
+                    r.hasArrived() ? r.getArrivedAt().toString() : ""));
         }
 
         for (Receipt r : lot.getReceipts()) {
@@ -126,8 +127,10 @@ public class FileParkingRepository implements ParkingRepository {
                         if (held == null) {
                             throw new IllegalArgumentException("unknown slot " + p[4]);
                         }
-                        lot.restoreReservation(new Reservation(p[1], p[2], p[3], held,
-                                LocalDateTime.parse(p[5]), LocalDateTime.parse(p[6])));
+                        Reservation saved = new Reservation(p[1], p[2], p[3], held,
+                                LocalDateTime.parse(p[5]), LocalDateTime.parse(p[6]));
+                        if (p.length > 7 && !p[7].isEmpty()) saved.restoreArrival(LocalDateTime.parse(p[7]));
+                        lot.restoreReservation(saved);
                         break;
                     }
                     case "SLOT":

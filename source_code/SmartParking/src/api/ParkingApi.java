@@ -93,6 +93,7 @@ public class ParkingApi {
                 sb.append(",\"reserved\":true")
                         .append(",\"reservationId\":").append(Json.quote(held.getId()))
                         .append(",\"reservedFor\":").append(Json.quote(held.getPlateNumber()))
+                        .append(",\"reservedArrived\":").append(held.hasArrived())
                         .append(",\"reservedUntil\":").append(Json.quote(held.getExpiresAt().toString()))
                         .append(",\"minutesLeft\":").append(held.minutesLeft(LocalDateTime.now()));
             }

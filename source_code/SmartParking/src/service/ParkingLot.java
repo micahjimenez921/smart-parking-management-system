@@ -27,6 +27,8 @@ import java.util.Map;
 public class ParkingLot {
     public static final int MAX_SLOTS = 200;
     public static final int RESERVATION_MINUTES = 30;
+    /** After a driver checks in, their slot is held for at least this many more minutes. */
+    public static final int ARRIVAL_GRACE_MINUTES = 10;
 
     private String name;
     private List<ParkingSlot> slots = new ArrayList<>();
@@ -352,6 +354,30 @@ public class ParkingLot {
         events.record(EventLog.STAFF, "info", "Slot reserved",
                 plate + " reserved slot " + slot.getSlotId() + " for " + RESERVATION_MINUTES + " minutes.", now);
         return reservation;
+    }
+
+    public Reservation checkIn(String id) {
+        return checkIn(id, LocalDateTime.now());
+    }
+
+    /** The driver says they have arrived. Staff are told, and the slot stays held for a few more minutes. */
+    public Reservation checkIn(String id, LocalDateTime now) {
+        purgeExpired(now);
+        Reservation r = findReservation(id);
+        if (r == null) {
+            throw new IllegalArgumentException("Reservation " + (id == null ? "" : id.trim()) + " not found or already ran out.");
+        }
+        if (r.hasArrived()) {
+            throw new IllegalStateException("You have already checked in. Please go to the entry gate.");
+        }
+        r.checkIn(now, now.plusMinutes(ARRIVAL_GRACE_MINUTES));
+        events.record(EventLog.STAFF, "info", "Driver arrived",
+                r.getPlateNumber() + " has arrived. Slot " + r.getSlot().getSlotId()
+                        + " is waiting. Register the vehicle to use it.", now);
+        events.record(r.getOwnerId(), "info", "Check-in received",
+                "The attendant knows you are here. Slot " + r.getSlot().getSlotId() + " is held until "
+                        + String.format("%02d:%02d", r.getExpiresAt().getHour(), r.getExpiresAt().getMinute()) + ".", now);
+        return r;
     }
 
     /** Puts back a saved reservation. The slot must exist, be empty and not be held already. */

@@ -145,7 +145,7 @@ function renderBays() {
     }
     bay.appendChild(art);
 
-    bay.appendChild(make("div", "bay-foot", slot.reserved ? "Held: " + slot.reservedFor : (slot.available ? "Available" : slot.plate)));
+    bay.appendChild(make("div", "bay-foot", slot.reserved ? (slot.reservedArrived ? "Arrived: " : "Held: ") + slot.reservedFor : (slot.available ? "Available" : slot.plate)));
 
     bay.addEventListener("click", () => selectSlot(slot.id));
     container.appendChild(bay);
@@ -184,10 +184,14 @@ function renderDetail() {
     rows.appendChild(row("Held for", slot.reservedFor));
     rows.appendChild(row("Reservation", slot.reservationId));
     rows.appendChild(row("Time left", slot.minutesLeft + " min"));
+    rows.appendChild(row("Driver", slot.reservedArrived ? "Has arrived" : "Not here yet"));
     card.appendChild(rows);
     card.appendChild(make("p", "detail-note",
       "This slot is held for a driver. When " + slot.reservedFor + " arrives, register the vehicle as usual and it goes here."));
     if (canUse("ENTRY")) {
+      const register = make("button", "btn", slot.reservedArrived ? "Register vehicle now" : "Register vehicle");
+      register.addEventListener("click", () => startEntryForReservation(slot));
+      card.appendChild(register);
       const cancel = make("button", "btn-ghost", "Cancel reservation");
       cancel.addEventListener("click", async () => {
         try {

@@ -39,6 +39,7 @@ public class ReservationApi {
         server.addRoute("/api/my/reservations", this::handleMine);
         server.addRoute("/api/my/reserve", this::handleReserve);
         server.addRoute("/api/my/reserve/cancel", this::handleCancelMine);
+        server.addRoute("/api/my/reserve/arrive", this::handleArrive);
         server.addRoute("/api/reservations", this::handleAll);
         server.addRoute("/api/reservations/cancel", this::handleCancelAny);
     }
@@ -169,6 +170,37 @@ public class ReservationApi {
         sendJson(exchange, 200, "{\"ok\":true}");
     }
 
+    private void handleArrive(HttpExchange exchange) throws IOException {
+        if (!"POST".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Use POST for this address.");
+            return;
+        }
+        Driver driver = driverOf(exchange);
+        if (driver == null) {
+            sendError(exchange, 403, "Only drivers can use this address.");
+            return;
+        }
+
+        String id = readForm(exchange).getOrDefault("id", "");
+        Reservation r = lot.findReservation(id);
+        // somebody else's reservation looks exactly like one that does not exist
+        if (r == null || !r.getOwnerId().equals(driver.getId())) {
+            sendError(exchange, 404, "Reservation " + id.trim() + " not found.");
+            return;
+        }
+        try {
+            lot.checkIn(r.getId());
+        } catch (IllegalStateException e) {
+            sendError(exchange, 409, e.getMessage());
+            return;
+        } catch (IllegalArgumentException e) {
+            sendError(exchange, 404, e.getMessage());
+            return;
+        }
+        persist();
+        sendJson(exchange, 200, reservationJson(r, LocalDateTime.now()));
+    }
+
     /* ---------- the staff's addresses ---------- */
 
     private void handleAll(HttpExchange exchange) throws IOException {
@@ -222,6 +254,8 @@ public class ReservationApi {
                 + ",\"createdAt\":" + Json.quote(r.getCreatedAt().toString())
                 + ",\"expiresAt\":" + Json.quote(r.getExpiresAt().toString())
                 + ",\"minutesLeft\":" + r.minutesLeft(now)
+                + ",\"arrived\":" + r.hasArrived()
+                + ",\"arrivedAt\":" + (r.hasArrived() ? Json.quote(r.getArrivedAt().toString()) : "null")
                 + "}";
     }
 

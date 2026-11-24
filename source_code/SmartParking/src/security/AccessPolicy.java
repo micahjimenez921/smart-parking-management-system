@@ -81,6 +81,7 @@ public class AccessPolicy {
                 .require("/api/my/reservations", Permission.SELF_SERVICE)
                 .require("/api/my/reserve", Permission.SELF_SERVICE)
                 .require("/api/my/reserve/cancel", Permission.SELF_SERVICE)
+                .require("/api/my/reserve/arrive", Permission.SELF_SERVICE)
 
                 .require("/api/my/ticket", Permission.SELF_SERVICE)
                 .require("/api/my/pay", Permission.SELF_SERVICE)

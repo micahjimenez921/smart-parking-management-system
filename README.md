@@ -27,10 +27,11 @@ Drivers can register themselves on the sign-in page. Staff accounts can only be 
 ## Objectives
 
 1. Apply OOP principles in a real-world scenario, for example private slot state, the Vehicle, ParkingSlot and User class hierarchies, and the PaymentMethod and FeeStrategy interfaces.
-2. Automate parking operations: slot assignment, duration tracking, fee computation, and payment.
-3. Protect data and access: no double-booking of slots, no duplicate plate numbers, payment before a slot is released, hashed passwords, and role-based access.
-4. Keep the architecture modular so real hardware (barrier gates, sensors), real payment gateways, and a database can be added later.
-5. Keep a maintainable codebase with clear separation between entities, services, storage, security, and the web API.
+2. Design a complete UML model (Use Case, Class, Sequence, Activity) that reflects the implemented system.
+3. Automate parking operations: slot assignment, duration tracking, fee computation, and payment.
+4. Protect data and access: no double-booking of slots, no duplicate plate numbers, payment before a slot is released, hashed passwords, and role-based access.
+5. Keep the architecture modular so real hardware (barrier gates, sensors), real payment gateways, and a database can be added later.
+6. Keep a maintainable codebase with clear separation between entities, services, storage, security, and the web API.
 
 ---
 
@@ -199,7 +200,23 @@ The browser pages are not covered by automated tests yet.
 
 ## UML Diagrams
 
-The diagram images are in the `UML_diagrams` folder. They were last updated on October 10 and do not yet show the fee rules, gates, accounts, or reservations.
+There are four diagrams, one for each type, in the `UML_diagrams` folder. They were redrawn on November 24 from the current code. Each one has a picture (`.drawio.png`) and an editable file (`.drawio`) that opens in [diagrams.net](https://app.diagrams.net).
+
+| Type | Picture | Editable file |
+|---|---|---|
+| Use Case | `Smart Parking - Usecase Diagram.drawio.png` | `Smart Parking - Usecase Diagram.drawio` |
+| Class | `Smart Parking - Class Diagram.drawio.png` | `Smart Parking - Class Diagram.drawio` |
+| Sequence | `Smart Parking - Sequence Diagram.drawio.png` | `Smart Parking - Sequence Diagram.drawio` |
+| Activity | `Smart Parking - Activity Diagram.drawio.png` | `Smart Parking - Activity Diagram.drawio` |
+
+What each one shows:
+
+- **Use Case:** the administrator, attendant, driver, and the system, with what each can do.
+- **Class:** users and security, the parking records, fee rules, payments (cash, card, GCash, PayMaya), and storage.
+- **Sequence:** park a vehicle, reserve a slot, and pay and leave.
+- **Activity:** one full visit in three lanes (driver, attendant, system), from sign in to leaving with a receipt.
+
+The October drawings were replaced. Their Google Drive links are kept below.
 
 ```
 Activity Diagram - https://drive.google.com/file/d/1qCvfWEacayVQOiDpiswt9HcmbSzh8mZ2/view?usp=sharing

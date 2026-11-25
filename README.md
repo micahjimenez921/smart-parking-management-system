@@ -118,6 +118,7 @@ smart-parking-management-system/
 │       │   ├── tests/       # automated tests
 │       │   └── user/        # Administrator, ParkingAttendant, Driver, roles, permissions
 │       └── web/             # pages, styles, scripts, logo; vendor/ holds three.js and fonts
+├── web_tests/               # browser tests for the web pages (Playwright)
 ├── data/                    # created when the system runs (not committed)
 ├── UML_diagrams/            # activity, class, sequence, and use case diagrams
 └── .gitignore
@@ -194,7 +195,18 @@ Each program prints the number of checks passed and failed. At the time of writi
 | `ReservationTests` | Reserving slots, expiry, driver check-in, notifications |
 | `WebAccessTests` | Which pages need a sign-in, cookie settings, file types |
 
-The browser pages are not covered by automated tests yet.
+### Browser tests
+
+The web pages are tested too. 30 browser tests open the real pages and click through them: sign-in, parking a vehicle, paying with Cash, Card, GCash and PayMaya, driver reservations and check-in, the driver's own payment, and the Reports page. They use [Playwright](https://playwright.dev) and need Node.js.
+
+```
+cd web_tests
+npm install
+npx playwright install chromium
+npm test
+```
+
+Each test file starts its own private server with sample data, so your real data is never changed. See `web_tests/README.md` for the details.
 
 ---
 
@@ -216,9 +228,15 @@ What each one shows:
 - **Sequence:** park a vehicle, reserve a slot, and pay and leave.
 - **Activity:** one full visit in three lanes (driver, attendant, system), from sign in to leaving with a receipt.
 
+The October drawings were replaced. Their Google Drive links are kept below.
+
 ```
-SPMS UML Diagrams - https://drive.google.com/drive/folders/1CZ6lhciMjMI0FgpjX9ZR17xJoOedUwNa?usp=drive_link
+Activity Diagram - https://drive.google.com/file/d/1qCvfWEacayVQOiDpiswt9HcmbSzh8mZ2/view?usp=sharing
+Class Diagram - https://drive.google.com/file/d/1xnFcemooXX9RI9cOM4pxUOtNwubIkxb4/view?usp=drive_link
+Sequence Diagram - https://drive.google.com/file/d/1nI1CPg_d7qLd5hFDEZWrF4E8xKmXwD2z/view?usp=drive_link
+Usecase Diagram - https://drive.google.com/file/d/1fJ5VBUVPP-s7xM8wY9TlLhuA2bSJ6bVm/view?usp=drive_link
 ```
+
 ---
 
 ## Third-Party Files

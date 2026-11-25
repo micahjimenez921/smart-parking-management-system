@@ -83,7 +83,9 @@ public class WebMain {
         AuthService auth = new AuthService(directory, sessions);
         AccessGuard guard = new AccessGuard(auth, AccessPolicy.standard());
 
-        WebServer server = new WebServer(8080, webRoot);
+        // 8080 unless the tests (or you) start Java with -Dsmartpark.port=NNNN
+        int port = Integer.getInteger("smartpark.port", 8080);
+        WebServer server = new WebServer(port, webRoot);
         server.setGuard(guard);
         new AuthApi(auth, directory, userRepository, guard).register(server);
         UserApi userApi = new UserApi(auth, directory, userRepository, guard);
@@ -96,7 +98,7 @@ public class WebMain {
         new SettingsApi(lot, repository).register(server);
         server.start();
 
-        System.out.println("SmartPark is running. Open http://localhost:8080 in your browser.");
+        System.out.println("SmartPark is running. Open http://localhost:" + port + " in your browser.");
         System.out.println("Click the red stop square in VS Code to stop the server.");
     }
 

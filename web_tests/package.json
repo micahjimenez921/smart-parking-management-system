@@ -1,0 +1,11 @@
+{
+  "name": "smartpark-web-tests",
+  "private": true,
+  "description": "Browser tests for the SmartPark web pages (sign-in, parking, paying, reservations, reports).",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 --test-timeout=300000"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

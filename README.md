@@ -228,13 +228,9 @@ What each one shows:
 - **Sequence:** park a vehicle, reserve a slot, and pay and leave.
 - **Activity:** one full visit in three lanes (driver, attendant, system), from sign in to leaving with a receipt.
 
-The October drawings were replaced. Their Google Drive links are kept below.
 
 ```
-Activity Diagram - https://drive.google.com/file/d/1qCvfWEacayVQOiDpiswt9HcmbSzh8mZ2/view?usp=sharing
-Class Diagram - https://drive.google.com/file/d/1xnFcemooXX9RI9cOM4pxUOtNwubIkxb4/view?usp=drive_link
-Sequence Diagram - https://drive.google.com/file/d/1nI1CPg_d7qLd5hFDEZWrF4E8xKmXwD2z/view?usp=drive_link
-Usecase Diagram - https://drive.google.com/file/d/1fJ5VBUVPP-s7xM8wY9TlLhuA2bSJ6bVm/view?usp=drive_link
+SPMS UML DIAGRAMS - https://drive.google.com/drive/folders/1CZ6lhciMjMI0FgpjX9ZR17xJoOedUwNa?usp=sharing
 ```
 
 ---
